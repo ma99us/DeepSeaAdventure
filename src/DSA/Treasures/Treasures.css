@@ -1,0 +1,8 @@
+.Treasures {
+    position: relative;
+}
+
+.Treasure {
+    /*display: inline-block;*/
+    display: block;
+}

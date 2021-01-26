@@ -1,0 +1,28 @@
+.Sub {
+    position: relative;
+}
+
+.submarine{
+
+}
+
+.subrotor {
+    position: absolute;
+    left: -35px;
+    top: 90px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .subrotor {
+        animation: spin infinite 5s linear;
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
