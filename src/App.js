@@ -1,4 +1,5 @@
 import './App.css';
+import './media.css';
 import Game from "./DSA/Game";
 
 function App() {

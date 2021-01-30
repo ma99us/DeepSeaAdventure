@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import './Game.css';
 import Bubbles from "./Bubbles/Bubbles";
 import Sub from "./Sub/Sub";
+import {treasureIdToPoints} from "./Treasures/Treasure";
 import Treasures, {makeTreasureTrackIds} from "./Treasures/Treasures";
 
 export default class Game extends Component {
@@ -19,6 +20,7 @@ export default class Game extends Component {
     roundNum: 0,                // game round number
     // game specific properties:
     treasures: [],              // array of treasure ids, null - for picked ones
+    selectedTreasure: null      // index of the treasure on a track which is selected by the current player
   };
 
   // Each player state object template
@@ -90,6 +92,20 @@ export default class Game extends Component {
     players.push(player);
     this.setState({players: players});
     this.setState({version: this.state.version + 1});
+  };
+
+  onSelectTreasure = (idx) => {
+    const selected = idx !== this.state.selectedTreasure ? idx : null;
+    console.log(`selectTreasure; #${idx}, selected=${selected}`);    // #DEBUG
+    this.setState({selectedTreasure: selected});
+  };
+
+  onPickTreasure = (idx) => {
+    const treasures = [...this.state.treasures];
+    const id = treasures.splice(idx, 1, null)[0];
+    const points = treasureIdToPoints(id);
+    console.log(`pickTreasure; #${idx}; id=${id} => points: ${points}`);    // #DEBUG
+    this.setState({treasures: treasures});
   };
 
   render() {
