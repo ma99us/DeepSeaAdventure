@@ -45,17 +45,24 @@ export function colorArrayToStyle(color, rgba = true) {
   } else if (!Array.isArray(color)) {
     // eslint-disable-next-line
     throw "color should be in RBGA array";
+  } else if (color.length < 3 || color.length > 4) {
+    throw "unexpected color array length: '" + color + "', should be a RBGA array";
   }
-  let s = '#' + color[0].toString(16) + color[1].toString(16) + color[2].toString(16);
+
+  const byteToHex = (num) => {
+    return ('0' + num.toString(16)).substr(-2);
+  };
+
+  let s = '#' + byteToHex(color[0]) + byteToHex(color[1]) + byteToHex(color[2]);
   if (rgba) {
-    s += color.length === 4 ? color[3].toString(16) : "FF";
+    s += color.length === 4 ? byteToHex(color[3]) : "FF";
   }
   return s;
 }
 
 export function colorStyleToArray(clrStyle, rgba = true){
   if(!clrStyle){
-    return rgba ? '#000000FF' : '#000000'; // black
+    clrStyle = rgba ? '#000000FF' : '#000000'; // black
   }
   if (typeof clrStyle !== 'string' || !clrStyle.startsWith('#')) {
     // eslint-disable-next-line

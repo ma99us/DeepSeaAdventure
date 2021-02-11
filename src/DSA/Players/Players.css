@@ -1,0 +1,33 @@
+.Players {
+    position: absolute;
+    width: 200px;
+    right: 0;
+    top: 50px;
+    padding: 5px;
+    /*border: solid 1px red;*/
+}
+
+.Player {
+    /*text-align: left;*/
+    border: 2px solid #016b8c;
+    padding: 3px 10px 3px 10px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+}
+
+.PlayerAction {
+    position: absolute;
+    width: 400px;
+    right: 0;
+    top: 300px;
+    padding: 5px;
+    border: solid 1px gold;
+}
+
+.player-text {
+    font-size: larger;
+    font-weight: bolder;
+    letter-spacing: 0.1em;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    -webkit-font-smoothing: antialiased;
+}

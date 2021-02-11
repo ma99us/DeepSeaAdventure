@@ -25,12 +25,6 @@ async function initBlank() {
   return await loadImage(blank_token_60);
 }
 
-function clicked() {
-  console.log('this is:', this);
-  //console.log('this is:', this, props.clicked);
-  // props.clicked();
-}
-
 const Treasure = (props) => {
   const id = props.id;
   const masked = props.masked;

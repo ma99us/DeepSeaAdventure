@@ -22,7 +22,7 @@ export async function transitionElement(elem, styles, callback = null) {
       elem.removeEventListener("transitionend", onEnd);
       elem.removeEventListener("webkitTransitionEnd", onEnd);
 
-      console.log("transition finished; propertyName=" + ev.propertyName + ", elapsedTime=" + ev.elapsedTime);  //#DEBUG
+      // console.log("transition finished; propertyName=" + ev.propertyName + ", elapsedTime=" + ev.elapsedTime);  //#DEBUG
 
       if (callback) {
         callback(ev);
@@ -68,7 +68,7 @@ export async function animateElement(elem, animClassName, callback = null) {
 
       elem.classList.remove(animClassName);
 
-      console.log("animation finished; propertyName=" + ev.propertyName + ", elapsedTime=" + ev.elapsedTime);  //#DEBUG
+      // console.log("animation finished; propertyName=" + ev.propertyName + ", elapsedTime=" + ev.elapsedTime);  //#DEBUG
 
       if (callback) {
         callback(ev);

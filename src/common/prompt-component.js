@@ -1,0 +1,215 @@
+import {transitionElement, sleep} from "../common/dom-animator";
+
+export default class Prompt {
+  static PromptType = {INFO: 1, SUCCESS: 2, WARNING: 3, ERROR: 4};
+
+  divElem = null;
+  txtElem = null;
+  delayedPrompts = [];
+
+  showFor = 2000;  // show for 2s by default
+  infoBgColor = "#000000CC";    // greyish
+  infoTxtColor = "white";
+  successBgColor = "#99ffccCC";    // greenish
+  successTxtColor = "#3300cc";
+  warnBgColor = "#ffcc66CC";    // orangeish
+  warnTxtColor = "black";
+  errBgColor = "#cc0000CC";    // redish
+  errTxtColor = "#ffff66";
+
+  constructor() {
+    if (!this.divElem) {
+      this.divElem = document.createElement("div");
+      this.divElem.style.position = "absolute"; // for css transitions to work
+      // this.divElem.style.marginTop = "-25px";
+      // this.divElem.style.marginLeft = "-200px";
+      this.divElem.style.transform = "translate(-50%, -50%)";
+      this.divElem.style.transition = "all .8s ease";
+      this.divElem.style.left = "50%"; // for css transitions to work
+      this.divElem.style.top = "-50%"; // for css transitions to work
+      this.divElem.style.maxWidth = "75%";
+      // this.divElem.style.width = "400px";
+      // this.divElem.style.height = "50px";
+      this.divElem.style.opacity = "0";
+      this.divElem.style.zIndex = "99";
+      this.divElem.style.textAlign = "center";
+      this.divElem.style.lineHeight = "40px";
+      this.divElem.onclick = () => {
+        if (!this.modal) {
+          // if not 'modal', hide prompt on click
+          this.animatePromptHide();
+        }
+      };
+
+      this.txtElem = document.createElement("h");
+      this.divElem.appendChild(this.txtElem);
+
+      document.body.appendChild(this.divElem);
+    }
+  }
+
+  setPromptStyle(type, linesNum) {
+    if (type === Prompt.PromptType.SUCCESS) {
+      this.divElem.style.boxShadow = "0 0 20px 20px " + this.successBgColor;
+      this.divElem.style.backgroundColor = this.successBgColor;
+      this.txtElem.style.color = this.successTxtColor;
+      this.txtElem.style.fontSize = "xx-large";
+    } else if (type === Prompt.PromptType.WARNING) {
+      this.divElem.style.boxShadow = "0 0 20px 20px " + this.warnBgColor;
+      this.divElem.style.backgroundColor = this.warnBgColor;
+      this.txtElem.style.color = this.warnTxtColor;
+      this.txtElem.style.fontSize = "xx-large";
+    } else if (type === Prompt.PromptType.ERROR) {
+      this.divElem.style.boxShadow = "0 0 20px 20px " + this.errBgColor;
+      this.divElem.style.backgroundColor = this.errBgColor;
+      this.txtElem.style.color = this.errTxtColor;
+      this.txtElem.style.fontSize = "xx-large";
+    } else {    // PromptType.INFO
+      //this.divElem.style.border = "5px solid #000000CC";
+      this.divElem.style.boxShadow = "0 0 20px 20px " + this.infoBgColor;
+      this.divElem.style.backgroundColor = this.infoBgColor;
+      this.txtElem.style.color = this.infoTxtColor;
+      this.txtElem.style.fontSize = "xx-large";
+    }
+
+    // const height = Math.max(50, linesNum * 40);
+    // const lineHeight = Math.floor(height / linesNum);
+    // this.divElem.style.height = height + "px";
+    // this.divElem.style.lineHeight = lineHeight + "px";
+  }
+
+  getDelayedPrompt() {
+    if (!this.delayedPrompts.length) {
+      return null;
+    }
+    return this.delayedPrompts.splice(0, 1)[0];
+  }
+
+  async showPrompt(txt, showFor = this.showFor, type = Prompt.PromptType.INFO) { // show for 2s by default
+    if (this.showing) {
+      if (this.txt === txt) {
+        // do not show duplicate prompts
+        return;
+      } else if (showFor < 0 && type === Prompt.PromptType.ERROR) {
+        // hide previous and show the error now
+        await this.hidePrompt();
+      } else {
+        // show new prompt after the current one closes
+        this.delayedPrompts.push({txt: txt, showFor: showFor, type: type});
+        return;
+      }
+    }
+
+    let txtLines = '';
+    if (Array.isArray(txt)) {
+      this.setPromptStyle(type, txt.length);
+      for (let i = 0; i < txt.length; i++) {
+        txtLines += i > 0 ? ("<br/>" + txt[i]) : txt[i];
+      }
+    } else {
+      this.setPromptStyle(type, 1);    // Math.ceil(txt.length / 20)
+      txtLines = txt;
+    }
+    this.txtElem.innerHTML = txtLines;
+
+    if (showFor < 0) {
+      this.modal = true;  // if 'showFor' is negative number, then it is a Modal prompt, that can not be closed by clicking on it
+    }
+    this.txt = txt;
+
+    await this.animatePromptShow();
+
+    if (showFor > 0) {
+      // self-closing prompt
+      await sleep(showFor);
+      await this.animatePromptHide();
+    }
+  }
+
+  async showSuccess(txt, showFor) {
+    return this.showPrompt(txt, showFor, Prompt.PromptType.SUCCESS);
+  }
+
+  async showWarning(txt, showFor) {
+    return this.showPrompt(txt, showFor, Prompt.PromptType.WARNING);
+  }
+
+  async showError(txt, showFor = -1) {
+    return this.showPrompt(txt, showFor, Prompt.PromptType.ERROR);
+  }
+
+  async hidePrompt() {
+    if (this.showing) {
+      await this.animatePromptHide();
+    }
+  }
+
+  async animatePromptShow() {
+    this.showing = true;
+
+    const animStyle = {
+      //transition: "all 1s",
+      top: "50%",
+      opacity: "1"
+    };
+
+    await transitionElement(this.divElem, animStyle);
+  }
+
+  async animatePromptHide() {
+    const animStyle = {
+      //transition: "all 1s",
+      top: "-50%",
+      opacity: "0"
+    };
+
+    await transitionElement(this.divElem, animStyle);
+
+    // reset previous prompt state
+    this.showing = false;
+    this.modal = false;
+    this.txt = null;
+
+    // show queued prompts if any
+    let delayedPrompt = this.getDelayedPrompt();
+    if (delayedPrompt) {
+      this.showPrompt(delayedPrompt.txt, delayedPrompt.showFor, delayedPrompt.type);
+    }
+  }
+}
+
+export function registerGlobalErrorHandler(funk) {
+  if (typeof(funk) !== 'function') {
+    throw "The argument must be an callback function";
+  }
+
+  window.onerror = function (msg, url, line, col, error) {
+    // Note that col & error are new to the HTML 5 spec and may not be supported in every browser.
+    const extra = "In url: " + url + " line: " + line + (!col ? '' : ' column: ' + col) + !error ? '' : ', error: ' + error;
+
+    let txt = "Error: " + msg;
+    if (extra) {
+      txt += "<br>(" + extra + ")";
+    }
+
+    //alert(txt);
+    funk(txt);
+
+    // return true to suppress then error alerts in old browsers like in older versions of Internet Explorer
+    return true;
+  };
+
+  window.addEventListener('unhandledrejection', function (event) {
+    // the event object has two special properties:
+    // promise: [object Promise] - the promise that generated the error
+    // reason: Error: Whoops! - the unhandled error object
+
+    let txt = "Error: " + event.reason;
+    if (event.promise) {
+      txt += "<br>In: " + event.promise;
+    }
+
+    //alert(txt);
+    funk(txt);
+  });
+}

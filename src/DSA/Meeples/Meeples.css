@@ -1,0 +1,12 @@
+.Meeples {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    /*border: solid 1px red;*/
+}
+
+.Meeple {
+    position: absolute;
+    display: inline-block;
+    transition: all 0.5s;
+}

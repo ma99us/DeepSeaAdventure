@@ -1,0 +1,48 @@
+.PlayerBoard {
+    position: absolute;
+    width: 200px;
+    height: 352px;
+    right: 0;
+    top: 400px;
+    margin: 5px;
+    background-image: url("player_board_200.png");
+    border-radius: 10px;
+    border: solid 1px #016b8c;
+    color: black;
+}
+
+#playerGoUp {
+    position: relative;
+    height: 90px;
+    vertical-align: top;
+    padding-top: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    /*border: solid 1px #016b8c;*/
+}
+
+#playerDiceArea {
+    position: relative;
+    height: 80px;
+    padding-top: 20px;
+    vertical-align: center;
+    /*border: solid 1px #016b8c;*/
+}
+
+#playerCargo {
+    position: relative;
+    height: 20px;
+    padding-top: 5px;
+    vertical-align: center;
+    border: solid 1px #016b8c;
+}
+
+#playerGoDown {
+    position: relative;
+    height: 70px;
+    vertical-align: bottom;
+    padding-top: 45px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    /*border: solid 1px #016b8c;*/
+}

@@ -11,3 +11,12 @@
     color: white;
     user-select: none;
 }
+
+#game-field {
+    width: 800px;
+    height: 720px;
+    text-align: center;
+    position: relative;
+    align-items: center;
+    /*border: solid 1px blue;*/
+}
