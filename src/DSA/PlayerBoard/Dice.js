@@ -3,7 +3,15 @@ import {loadImage} from '../../common/drawing';
 import dice_80 from './dice_80.png';
 import './PlayerBoard.css';
 
+//export const DiceSidesIds = [0, 1, 2, 3, 4, 5]; // these are side indexes, not values! (usually index + 1 = value)
+export const DiceSidesIds = [0, 0, 1, 1, 2, 2]; // this game custom dice
+
 export const DiceMaskedId = 6;
+
+export function rollDice() {
+  const idx = Math.floor(Math.random() * DiceSidesIds.length);
+  return DiceSidesIds[idx];
+}
 
 async function initTokens() {
   const tokensNum = 7;     // 6 + 1 for masked id
@@ -52,6 +60,8 @@ const Dice = (props) => {
     const animateRoll = () => {
       const start = Date.now(); // remember start time
 
+      const maxRot = Math.PI;
+      const maxOffset = Math.round(context.canvas.height / 4);  // 25% vertical bounce
       const duration = 500 + Math.round(Math.random() * 1500);
       let timer = setInterval(async () => {
         let timePassed = Date.now() - start;
@@ -68,9 +78,9 @@ const Dice = (props) => {
         }
 
         // draw the intermediate state of animation
-        const id1 = Math.floor(Math.random() * DiceMaskedId);
-        const rot1 = Math.random() * Math.PI;
-        const offset1 = 10 - Math.floor(Math.random() * 20);
+        const id1 = rollDice();
+        const rot1 = Math.random() * maxRot;
+        const offset1 = maxOffset / 2 - Math.floor(Math.random() * maxOffset);
         await drawElement(context, id1, rot1, offset1, masked);
       }, 20);
     };
@@ -84,7 +94,7 @@ const Dice = (props) => {
 
 
   return (
-    <canvas className="Dice" ref={canvasRef} onClick={props.clicked} width={80} height={80} style={style}></canvas>
+    <canvas className="Dice" ref={canvasRef} onClick={props.clicked} width={80} height={80} style={style}/>
   )
 };
 

@@ -46,11 +46,12 @@ const Treasures = (props) => {
   const clicked = (idx) => {
     // treasure was clicked
     const id = game.state.treasures[idx];
-    if (id != null && game.state.selectedTreasure !== idx) {
-      game.onSelectTreasure(idx);
-    } else if (id != null) {
-      game.onPickTreasure(idx);
-    }
+    console.log('Treasure #' + id + ' clicked');
+    // if (id != null && game.state.selectedTreasure !== idx) {
+    //   game.onSelectTreasure(idx);
+    // } else if (id != null) {
+    //   game.onPickTreasure(idx);
+    // }
   };
 
   const treasures = game.state.treasures.map((id, index) => {
@@ -58,7 +59,7 @@ const Treasures = (props) => {
     // console.log(`index=${index}, offsetX=${offsetX}, offsetY=${offsetY}, sin=${sin}`);    // #DEBUG
     const style = {transform: `scale(0.8) translate(${offsetX}px, ${offsetY}px) rotate(${rotDeg}deg)`};
     return (<Treasure key={index} id={id} masked={game.state.selectedTreasure !== index} style={style}
-                      clicked={() => clicked(index)}></Treasure>);
+                      clicked={() => clicked(index)}/>);
   });
 
   return (

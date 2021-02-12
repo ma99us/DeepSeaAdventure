@@ -8,8 +8,8 @@ const Meeples = (props) => {
 
   //#TEST: only for development
   const clicked = (idx) => {
-//    console.log('Meeple #' + idx + ' clicked');  //#DEBUG
-    game.onMeepleSelected(idx);
+    console.log('Meeple #' + idx + ' clicked');  //#DEBUG
+    game.onSelectMeeple(idx);
   };
 
   const treasures = game.state.players.map((player, index) => {
@@ -33,7 +33,7 @@ const Meeples = (props) => {
       style = {transform: `scale(1.0) translate(${offsetX}px, ${offsetY}px) rotate(${rotDeg}deg)`};
     }
     return (<Meeple key={index} id={index} selected={game.state.playerTurn === index} style={style}
-                    clicked={() => clicked(index)}></Meeple>);
+                    clicked={() => clicked(index)}/>);
   });
 
   return (

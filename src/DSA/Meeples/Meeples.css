@@ -8,5 +8,5 @@
 .Meeple {
     position: absolute;
     display: inline-block;
-    transition: all 0.5s;
+    transition: all 1.0s;
 }

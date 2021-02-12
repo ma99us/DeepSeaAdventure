@@ -1,6 +1,6 @@
 .Players {
     position: absolute;
-    width: 200px;
+    width: 400px;
     right: 0;
     top: 50px;
     padding: 5px;
@@ -8,20 +8,43 @@
 }
 
 .Player {
-    /*text-align: left;*/
+    position: relative;
+    display: inline-block;
+    height: 30px;
+    text-align: left;
     border: 2px solid #016b8c;
     padding: 3px 10px 3px 10px;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     border-radius: 10px;
 }
 
-.PlayerAction {
-    position: absolute;
-    width: 400px;
-    right: 0;
-    top: 300px;
-    padding: 5px;
-    border: solid 1px gold;
+.PlayerTreasures {
+    position: relative;
+    display: inline-block;
+    vertical-align: middle;
+    /*top: -4px;*/
+    right: 10px;
+    width: 200px;
+    height: 40px;
+    text-align: right;
+    /*border: solid 1px gold;*/
+}
+
+.PlayerScore{
+    display: inline-block;
+    vertical-align: middle;
+    font-size: larger;
+    font-weight: bolder;
+    margin-right: 5px;
+    /*border: solid 1px red;*/
+}
+
+.PlayerName{
+    display: inline-block;
+    vertical-align: middle;
+    width: 150px;
+    text-align: center;
+    /*border: solid 1px red;*/
 }
 
 .player-text {
@@ -30,4 +53,10 @@
     letter-spacing: 0.1em;
     text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
     -webkit-font-smoothing: antialiased;
+}
+
+.truncate-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }

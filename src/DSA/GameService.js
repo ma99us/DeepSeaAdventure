@@ -4,6 +4,7 @@ import LocalStorageService from "../services/local-storage-service";
 import HostStorageService from "../services/host-storage-service";
 import MessageBusService from "../services/message-bus-service";
 import RoomService from "./RoomService";
+import {rollDice} from "./PlayerBoard/Dice";
 
 export default class GameService {
 
@@ -191,6 +192,11 @@ export default class GameService {
     return this.isPlayerReady(idx) && playerState.playerStatus < GameService.PlayerStates.LOST;
   }
 
+  isActivePlayer(idx) {
+    const playerState = this.getPlayerState(idx);
+    return playerState.playerStatus === GameService.PlayerStates.PLAYING;
+  }
+
   /**
    * Copies Players array, modifies it in a callback, sets the new players array, returns the modified players array.
    * @param funk callback to iterate over player states array
@@ -231,10 +237,20 @@ export default class GameService {
     const state = this.state;
     const nextPlayerTurn = this.findNextPlayerIdx(onlyPlayingPlayers);
     if (nextPlayerTurn >= 0) {
-      state.prevPlayerTurn = state.playerTurn;
-      state.playerTurn = nextPlayerTurn;
+      this.game.setState({prevPlayerTurn: state.playerTurn});
+      this.game.setState({playerTurn: nextPlayerTurn});
     }
     return state.playerTurn;
+  }
+
+  isRoundStarted() {
+    for (let i = 0; this.isGamePlaying && i < this.game.state.players.length; i++) {
+      const playerState = this.game.state.players[i];
+      if (playerState.playerStatus > GameService.PlayerStates.WAITING && playerState.playerStatus < GameService.PlayerStates.LOST) {
+        return true;
+      }
+    }
+    return false;
   }
 
   //////// host state synchronization methods
@@ -296,7 +312,7 @@ export default class GameService {
       .then(remoteState => {
         if (!remoteState) {
           console.log('no remote state; pushing local');
-          return this.fireLocalStateUpdated();
+          this.game.setState({version: this.game.state.version + 1}); // this will fireLocalStateUpdated()
         } else if (remoteState.version > this.state.version || remoteState.version === 0) {
           return this.onRemoteStateUpdate(remoteState);
         } else {
@@ -319,20 +335,25 @@ export default class GameService {
   }
 
   fireLocalStateUpdated() {
+    console.log('fireLocalStateUpdated; version=' + this.state.version);  // #DEBUG
+
     if (!this.gameId) {
       console.log('not in game. not pushing local state.');
+      const timer = setInterval(() => {
+        clearInterval(timer);
+        this.game.processGameStateChange();
+      }, 100);
       return;
     }
 
-    this.game.setState({version: this.game.state.version + 1});
-    console.log('fireLocalStateUpdated; version=' + this.state.version);  // #DEBUG
-
     return this.updateRemoteState()
+      .then(() => {
+        this.game.processGameStateChange();
+      })
       .catch(err => {
         this.game.onError('updateRemoteState; error: ' + err, err);
       })
   }
-
 }
 
 /**

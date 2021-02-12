@@ -8,12 +8,12 @@ const Players = (props) => {
   //#TEST: only for development
   const clicked = (idx) => {
 //    console.log('Player #' + idx + ' clicked');  //#DEBUG
-    game.onMeepleSelected(idx);
+    game.onSelectMeeple(idx);
   };
 
   const players = game.state.players.map((player, index) => {
     let style = null;
-    return (<Player key={index} game={game} idx={index} selected={game.state.playerTurn === index} style={style} clicked={() => clicked(index)}></Player>);
+    return (<Player key={index} game={game} idx={index} selected={game.state.playerTurn === index} style={style} clicked={() => clicked(index)}/>);
   });
 
   return (

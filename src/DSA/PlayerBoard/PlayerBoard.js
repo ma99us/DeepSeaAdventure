@@ -3,14 +3,19 @@ import * as drawing from "../../common/drawing";
 import GameService from "../GameService";
 import {makePlayerColorStyle} from "../Players/Player";
 import Dice from "./Dice";
+import {makeGlowFilter} from "../../common/drawing";
+import PromiseEx from "../../common/PromiseEx";
 import thumbs_up from "./thumbs_up_60.png";
 import thumbs_down from "./thumbs_down_60.png";
+import pass_hand from "./pass_hand_60.png";
+import pick_hand from "./pick_hand_60.png";
+import discard_icon from "./discard_60.png";
 import './PlayerBoard.css';
-import {makeGlowFilter} from "../../common/drawing";
+import Treasure from "../Treasures/Treasure";
 
 const PlayerBoard = (props) => {
   const game = props.game;
-  const idx = props.idx;
+  const idx = props.idx != null ? props.idx : game.state.playerTurn;
   const style = props.style || {};
 
   const playerState = game.gameService.getPlayerState(idx);
@@ -20,49 +25,83 @@ const PlayerBoard = (props) => {
     );
   }
 
-  // HACK to to resolve promises outside of context
-  let onResolve0;
-  const p0 = new Promise(function(resolve, reject){
-    onResolve0 = playerState.playerDiceToRoll[0] != null ? resolve : null;
-  });
-  let onResolve1;
-  const p1 = new Promise(function(resolve, reject){
-    onResolve1 = playerState.playerDiceToRoll[1] != null ? resolve : null;
-  });
-  Promise.all([p0, p1]).then(() => {
-    //console.log('both dice rolled');
+  const promises = [new PromiseEx(), new PromiseEx()];
+  Promise.all(promises).then(() => {
+    //console.log('both dice rolled');  // #DEBUG
     game.onDiceFinishedRolling(idx);
   });
-  console.log(`#${idx} ${playerState.playerName}; playerDiceToRoll:${playerState.playerDiceToRoll}`);
+  // console.log(`#${idx} ${playerState.playerName}; playerDiceToRoll:${playerState.playerDiceToRoll}`); // #DEBUG
 
   const playerColorStyle = makePlayerColorStyle(playerState);
 
-  const canGoUp = playerState.playerMeeplePos >= 0;
+  // first part
+  const showFirstPart = !playerState.playerReturning || playerState.playerMeeplePos >= 0;
+  const canGoUp = !playerState.playerDiceRolled.length && playerState.playerMeeplePos >= 0;
   const playerGoUpStyle = {};
   playerGoUpStyle.visibility = canGoUp ? "visible" : "hidden";
 
   const goUpStyle = {};
   goUpStyle.filter = makeGlowFilter(3, playerColorStyle, 3);
 
-  const canGoDown = !playerState.playerReturning && playerState.playerMeeplePos < game.state.treasures.length - 1;  //FIXME: this is not accurate, account for other meeples.
+  const canGoDown = !playerState.playerDiceRolled.length && !playerState.playerReturning && playerState.playerMeeplePos < game.state.treasures.length - 1;  //FIXME: this is not accurate, account for other meeples.
   const playerGoDownStyle = {};
-  playerGoDownStyle.visibility =  canGoDown ? "visible" : "hidden";
+  playerGoDownStyle.visibility = canGoDown ? "visible" : "hidden";
 
   const goDownStyle = {};
   goDownStyle.filter = makeGlowFilter(3, playerColorStyle, 3);
 
   const cargoStyle = {};
-  cargoStyle.visibility =  playerState.playerPickedTreasures.length > 0 ? "visible" : "hidden";
+  cargoStyle.visibility = playerState.playerPickedTreasures.length ? "visible" : "hidden";
+
+  // second part
+  const showSecondPart = playerState.playerDiceRolled.length && !playerState.playerDiceToRoll.length;
+  const playerPassStyle = {};
+  const passStyle = {};
+  passStyle.visibility = showSecondPart ? "visible" : "hidden";
+  passStyle.filter = makeGlowFilter(3, playerColorStyle, 3);
+
+  const treasureId = game.state.treasures[playerState.playerMeeplePos];
+
+  const playerPickStyle = {};
+  playerPickStyle.visibility = treasureId != null ? "visible" : "hidden";
+
+  const treasureStyle = {};
+  treasureStyle.position = "relative";
+  treasureStyle.top = "20px";
+  treasureStyle.left = "10px";
+
+  const pickStyle = {};
+  pickStyle.position = "relative";
+  pickStyle.top = "-10px";
+  pickStyle.left = "0";
+  pickStyle.filter = makeGlowFilter(3, playerColorStyle, 3);
+
+  style.width = showSecondPart ? "400px" : (showFirstPart ? "200px" : 0);
 
   return (
     <div className="PlayerBoard" style={style}>
-      <div id="playerGoUp" style={playerGoUpStyle}><img src={thumbs_up} onClick={() => game.onMeepleDirectionSelected(idx, true)} style={goUpStyle} alt="go up"></img></div>
-      <div id="playerDiceArea">
-        <Dice id={playerState.playerDiceRolled[0]} rolled={onResolve0}></Dice>
-        <Dice id={playerState.playerDiceRolled[1]} rolled={onResolve1}></Dice>
+      <div id="playerDiveContainer">
+        <div id="playerGoUp" style={playerGoUpStyle} onClick={() => game.onMeepleDirectionSelected(idx, true)}>
+          <img src={thumbs_up} style={goUpStyle} alt="go up"/></div>
+        <div id="playerDiceArea">
+          <Dice id={playerState.playerDiceRolled[0]}
+                rolled={playerState.playerDiceToRoll[0] != null ? promises[0].onResolve : null}/>
+          <Dice id={playerState.playerDiceRolled[1]}
+                rolled={playerState.playerDiceToRoll[1] != null ? promises[1].onResolve : null}/>
+        </div>
+        <div id="playerCargo" style={cargoStyle}>
+          Overburden: -{playerState.playerPickedTreasures.length}</div>
+        <div id="playerGoDown" style={playerGoDownStyle} onClick={() => game.onMeepleDirectionSelected(idx, false)}>
+          <img src={thumbs_down} style={goDownStyle} alt="go down"/></div>
       </div>
-      <div id="playerCargo" style={cargoStyle}>Salvage penalty: -{playerState.playerPickedTreasures.length}</div>
-      <div id="playerGoDown" style={playerGoDownStyle}><img src={thumbs_down} onClick={() => game.onMeepleDirectionSelected(idx, false)} style={goDownStyle} alt="go down"></img></div>
+      <div id="playerTreasureContainer">
+        <div id="playerPass" style={playerPassStyle} onClick={() => game.onPlayerTurnsEnd(idx)}>
+          <img src={pass_hand} style={passStyle} alt="pass"/></div>
+        <div id="playerPickTreasure" style={playerPickStyle} onClick={() => game.onPickTreasure(idx, playerState.playerMeeplePos)}>
+          <Treasure id={treasureId} masked={true} style={treasureStyle}/>
+          <img src={pick_hand} style={pickStyle} alt="pass" width="73" height="50"/></div>
+        <div id="playerDropTreasure">TODO: drop treasures</div>
+      </div>
     </div>
   )
 };

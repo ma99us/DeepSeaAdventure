@@ -1,5 +1,3 @@
-import MessageBusService from "./message-bus-service";
-
 export default class LocalStorageService {
 
   constructor(prefix = null) {

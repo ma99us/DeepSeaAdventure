@@ -64,7 +64,7 @@ const Treasure = (props) => {
   }, [canvasRef, id, masked, rot, col, row]);
 
   return (
-    <canvas className="Treasure" ref={canvasRef} onClick={props.clicked} width={60} height={60} style={style}></canvas>
+    <canvas className="Treasure" ref={canvasRef} onClick={props.clicked} width={60} height={60} style={style}/>
   )
 };
 

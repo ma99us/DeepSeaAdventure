@@ -10,6 +10,7 @@ import Meeples from "./Meeples/Meeples";
 import GameService from "./GameService";
 import Players from "./Players/Players";
 import PlayerBoard from "./PlayerBoard/PlayerBoard";
+import {rollDice} from "./PlayerBoard/Dice";
 
 export default class Game extends Component {
 
@@ -39,10 +40,11 @@ export default class Game extends Component {
     // this.processGameStateChange();
   }
 
-  // DOM updated
+  // this.state updated!
   componentDidUpdate(prevProps, prevState) {
-    if (this.state.version !== prevState.version) {
-      this.processGameStateChange();
+    if (this.state.version > prevState.version) {
+      //this.processGameStateChange();
+      this.gameService.fireLocalStateUpdated();
     }
   }
 
@@ -64,59 +66,115 @@ export default class Game extends Component {
     this.prompt.hidePrompt();
   };
 
-  // The game state machine
+  // The Game State Machine:
   processGameStateChange = () => {
-    console.log('processGameStateChange;');
     //TODO:
-    if (!this.state.gameStatus) {
+    // console.log('processGameStateChange;');
+
+    if (!this.gameService.isGameReady) {
+      console.log('start game...');
       this.startGame();
+    } else if (this.gameService.isGamePlaying && !this.gameService.isRoundStarted()) {
+      console.log('start round...');
+      this.onGameRoundStart();
+    } else if (!this.gameService.isActivePlayer(this.state.playerTurn)) {
+      console.log('start player #' + this.state.playerTurn + ' turn...');
+      this.onPlayerTurn(this.state.playerTurn);
     }
-  };
-
-  startGame = () => {
-    this.gameService.updatePlayersState((players) => {
-      ////// #TEST
-      this.gameService.addPlayer('Mike', MeeplesColors[0], players);
-      this.gameService.addPlayer('Stephan', MeeplesColors[1], players);
-      this.gameService.addPlayer('Ian', MeeplesColors[2], players);
-      this.gameService.addPlayer('Kevin', MeeplesColors[3], players);
-      this.gameService.addPlayer('Pascal', MeeplesColors[4], players);
-      this.gameService.addPlayer('Alan', MeeplesColors[5], players);
-      //////
-
-      // all players has to be registered at his point
-      players.forEach(p => p.playerStatus = GameService.PlayerStates.WAITING);
-    });
-
-    // generate initial random treasures track
-    this.setState({treasures: makeTreasureTrackIds()});
-
-    // update main game state
-    this.setState({gameStatus: GameService.GameStates.PLAYING});
-    this.gameService.fireLocalStateUpdated();
   };
 
   registerPlayer = (playerName, playerColor) => {
     this.gameService.updatePlayersState((players) => {
       this.gameService.addPlayer(playerName, playerColor, players);
     });
-    this.gameService.fireLocalStateUpdated();
+
+    this.setState({version: this.state.version + 1}); // this will fireLocalStateUpdated()
   };
 
-  // #TEST ONLY
-  onMeepleSelected = (playerIdx) => {
-    this.setState({playerTurn: playerIdx});
+  unregisterPlayer = (playerName) => {
+    this.gameService.updatePlayersState((players) => {
+      this.gameService.removePlayer(playerName, players);
+    });
+
+    this.setState({version: this.state.version + 1}); // this will fireLocalStateUpdated()
+  };
+
+  startGame = () => {
+    this.gameService.updatePlayersState((players) => {
+      ////// #TEST
+      this.gameService.addPlayer('Mike aka Very Long Name', MeeplesColors[0], players);
+      this.gameService.addPlayer('Stephan', MeeplesColors[1], players);
+      this.gameService.addPlayer('Ian', MeeplesColors[2], players);
+      this.gameService.addPlayer('Kevin', MeeplesColors[3], players);
+      this.gameService.addPlayer('Pascal', MeeplesColors[4], players);
+      this.gameService.addPlayer('Alan', MeeplesColors[5], players);
+
+      //////
+      // all players has to be registered at his point
+      players.forEach(p => {
+        p.playerSavedTreasures = [];
+        p.playerStatus = GameService.PlayerStates.WAITING;
+      });
+    });
+
+    // update main game state
+    this.setState({gameStatus: GameService.GameStates.PLAYING});
+
+    this.setState({version: this.state.version + 1}); // this will fireLocalStateUpdated()
+  };
+
+  onGameRoundStart = () => {
+    this.gameService.updatePlayersState(players => {
+      // reset players states to start the round
+      players.forEach((playerState, idx) => {
+        playerState.playerPickedTreasures = [];
+        playerState.playerDiceRolled = [];
+        playerState.playerDiceToRoll = [];
+        playerState.playerMeeplePos = -1;
+        playerState.playerReturning = false;
+        if (this.gameService.isPlayerPlaying(idx)) {
+          playerState.playerStatus = GameService.PlayerStates.PLAYING;
+        }
+      });
+    });
+
+    this.setState({roundNum: this.state.roundNum + 1});
+    this.setState({playerTurn: 0});
+
+    // generate new treasures track
+    this.setState({treasures: makeTreasureTrackIds()});
+  };
+
+  onPlayerTurn = (playerIdx) => {
+    this.gameService.updatePlayerState(playerIdx, (playerState) => {
+      // reset player state
+      playerState.playerDiceRolled = [];
+      playerState.playerDiceToRoll = [];
+      playerState.playerStatus = GameService.PlayerStates.PLAYING;
+    });
+
+    // wait for player input to select diver direction (call onMeepleDirectionSelected())
   };
 
   onMeepleDirectionSelected = (playerIdx, returning) => {
     this.gameService.updatePlayerState(playerIdx, (playerState) => {
+      if (playerState.playerDiceRolled.length) {
+        // ignore if dice already rolled (multi-clicks protection).
+        // console.log('onMeepleDirectionSelected ignored');  // #DEBUG
+        return;
+      }
+      // console.log('onMeepleDirectionSelected'); // #DEBUG
+
       // roll the dice
       if (returning && !playerState.playerReturning) {
-        playerState.playerReturning = returning
+        console.log('returning...');  // #DEBUG
+        playerState.playerReturning = returning;
       }
+
+      console.log('rolling dice...');  // #DEBUG
       playerState.playerDiceRolled = [];
-      playerState.playerDiceRolled[0] = Math.floor(Math.random() * 6);
-      playerState.playerDiceRolled[1] = Math.floor(Math.random() * 6);
+      playerState.playerDiceRolled[0] = rollDice();
+      playerState.playerDiceRolled[1] = rollDice();
 
       // trigger dice animation, onDiceFinishedRolling will be called once it is done
       playerState.playerDiceToRoll = [];
@@ -126,10 +184,21 @@ export default class Game extends Component {
   };
 
   onDiceFinishedRolling = (playerIdx) => {
+    let isDiceRolled = false;
     const playerState = this.gameService.updatePlayerState(playerIdx, (playerState) => {
+      if (!playerState.playerDiceToRoll.length) {
+        // ignore multi-triggers
+        return;
+      }
+      isDiceRolled = true;
       playerState.playerDiceToRoll = [];  // stop dice animation
     });
+    if (!isDiceRolled) {
+      // ignore multi-triggers
+      return;
+    }
 
+    console.log('...dice rolled; ' + playerState.playerDiceRolled);  // #DEBUG
     let steps = playerState.playerDiceRolled[0] + 1 + playerState.playerDiceRolled[1] + 1 - playerState.playerPickedTreasures.length;
     this.moveMeeple(playerIdx, steps)
   };
@@ -166,38 +235,89 @@ export default class Game extends Component {
       console.log("meeple #" + playerIdx + " moved by: " + steps + "; playerReturning: " + playerState.playerReturning + ", meeple pos=" + playerState.playerMeeplePos);
     });
 
-    this.gameService.fireLocalStateUpdated();
+    // this.gameService.fireLocalStateUpdated();
   };
 
   getMeepleOnPosition = (idx) => {
     return this.state.players.findIndex((p) => p.playerMeeplePos === idx);
   };
 
-  onSelectTreasure = (treasureIdx) => {
-    const selected = treasureIdx !== this.state.selectedTreasure ? treasureIdx : null;
-    console.log(`selectTreasure; #${treasureIdx}, selected=${selected}`);    // #DEBUG
-    this.setState({selectedTreasure: selected});
+  // #TEST ONLY
+  onSelectMeeple = (playerIdx) => {
+    this.gameService.updatePlayerState(this.state.playerTurn, (playerState) => {
+      playerState.playerStatus = GameService.PlayerStates.DONE;
+    });
+
+    this.setState({playerTurn: playerIdx});
+
+    this.setState({version: this.state.version + 1}); // this will fireLocalStateUpdated()
   };
 
-  onPickTreasure = (treasureIdx) => {
+  // #TEST only!
+  // onSelectTreasure = (treasureIdx) => {
+  //   const selected = treasureIdx !== this.state.selectedTreasure ? treasureIdx : null;
+  //   console.log(`selectTreasure; #${treasureIdx}, selected=${selected}`);    // #DEBUG
+  //   this.setState({selectedTreasure: selected});
+  // };
+
+  onPickTreasure = (playerIdx, treasureIdx) => {
+    if (this.state.treasures[treasureIdx] == null) {
+      return; // multi-click protection
+    }
+
     const treasures = [...this.state.treasures];
     const id = treasures.splice(treasureIdx, 1, null)[0];
     const points = treasureIdToPoints(id);
     console.log(`pickTreasure; #${treasureIdx}; id=${id} => points: ${points}`);    // #DEBUG
     this.setState({treasures: treasures});
+
+    this.gameService.updatePlayerState(playerIdx, playerState => {
+      playerState.playerPickedTreasures.push(id);
+    });
+
+    this.onPlayerTurnsEnd(playerIdx);
+  };
+
+  onPlayerTurnsEnd = (playerIdx) => {
+    this.gameService.updatePlayerState(playerIdx, (playerState) => {
+      //TODO: determine winners and losers here
+      if (playerState.playerMeeplePos < 0) {
+        playerState.playerSavedTreasures = [...playerState.playerSavedTreasures, ...playerState.playerPickedTreasures];
+        playerState.playerStatus = GameService.PlayerStates.WON;
+      } else {
+        playerState.playerStatus = GameService.PlayerStates.DONE;
+      }
+    });
+
+    this.gameService.advancePlayerTurn(false);
+
+    this.setState({version: this.state.version + 1}); // this will fireLocalStateUpdated()
+
+    //TODO: detect end of round here, call  onGameRoundEnd()
+  };
+
+  onGameRoundEnd = () => {
+    this.gameService.updatePlayersState(players => {
+      // reset players states to start the round
+      players.forEach((playerState, idx) => {
+        if (this.gameService.isPlayerPlaying(idx)) {
+          playerState.playerStatus = GameService.PlayerStates.WAITING;
+        }
+      });
+    });
   };
 
   render() {
     return (
       <div className="Game">
-        <Bubbles game={this}></Bubbles>
-        <Sub game={this}></Sub>
+        <Bubbles game={this}/>
+        <Sub game={this}/>
         <div id="game-field">
-          <Treasures game={this}></Treasures>
-          <Meeples game={this}></Meeples>
+          <Treasures game={this}/>
+          <Meeples game={this}/>
         </div>
-        <Players game={this}></Players>
-        <PlayerBoard game={this} idx={this.state.playerTurn}></PlayerBoard>
+        <Players game={this}/>
+        <PlayerBoard game={this}/>
       </div>
     )
   }

@@ -46,7 +46,7 @@ const Meeple = (props) => {
   }, [canvasRef, id, masked, rot, col, row]);
 
   return (
-    <canvas className="Meeple" ref={canvasRef} onClick={props.clicked} width={25} height={40} style={style}></canvas>
+    <canvas className="Meeple" ref={canvasRef} onClick={props.clicked} width={25} height={40} style={style}/>
   )
 };
 
