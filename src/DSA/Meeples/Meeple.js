@@ -2,6 +2,7 @@ import React, {useRef, useEffect} from 'react';
 import {loadImage} from '../../common/drawing';
 import tokens_40 from './meeples_40.png';
 import './Meeples.css';
+import {transitionElement, transitionListener} from "../../common/dom-animator";
 
 export const MeeplesIdsNum = 6;
 export const MeeplesColors = ['#710B06', '#0B5A23', '#003277', '#A24300', '#BDA400', '#351E2E'];
@@ -18,6 +19,7 @@ const Meeple = (props) => {
   const masked = props.masked;
   const rot = props.rot || 0;
   const style = props.style;
+  const moved = props.moved;
 
   const row = 0;
   const col = id;
@@ -43,7 +45,14 @@ const Meeple = (props) => {
     const canvas = canvasRef.current;
     const context = canvas.getContext('2d');
     void drawElement(context);
-  }, [canvasRef, id, masked, rot, col, row]);
+
+    if(moved){
+      transitionListener(canvasRef.current).then((ev) => {
+        console.log("Meeple transition finished; propertyName=" + ev.propertyName + ", elapsedTime=" + ev.elapsedTime);  //#DEBUG
+        moved(id);
+      });
+    }
+  }, [canvasRef, id, masked, rot, col, row, style, moved]);
 
   return (
     <canvas className="Meeple" ref={canvasRef} onClick={props.clicked} width={25} height={40} style={style}/>

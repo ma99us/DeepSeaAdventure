@@ -43,6 +43,7 @@ export default class Game extends Component {
   // this.state updated!
   componentDidUpdate(prevProps, prevState) {
     if (this.state.version > prevState.version) {
+      console.log("componentDidUpdate; version=" + this.state.version);  //#DEBUG
       //this.processGameStateChange();
       this.gameService.fireLocalStateUpdated();
     }
@@ -51,6 +52,12 @@ export default class Game extends Component {
   // Game is about to close. DOM destroyed
   componentWillUnmount() {
     console.log('Game closed');
+  }
+
+  setStateNow(obj) {
+    return new Promise((resolve => {
+      this.setState(obj, () => resolve(this.state));
+    }));
   }
 
   onError = (text, err = null) => {
@@ -120,7 +127,12 @@ export default class Game extends Component {
     // update main game state
     this.setState({gameStatus: GameService.GameStates.PLAYING});
 
-    this.setState({version: this.state.version + 1}); // this will fireLocalStateUpdated()
+    //this.setState({version: this.state.version + 1}); // this will fireLocalStateUpdated()
+    this.setStateNow({version: this.state.version + 1})
+      .then(() => {
+        console.log("setStateNow; version=" + this.state.version);  // #DEBUG
+      });
+    console.log("startGame; version=" + this.state.version);  // #DEBUG
   };
 
   onGameRoundStart = () => {
@@ -129,7 +141,6 @@ export default class Game extends Component {
       players.forEach((playerState, idx) => {
         playerState.playerPickedTreasures = [];
         playerState.playerDiceRolled = [];
-        playerState.playerDiceToRoll = [];
         playerState.playerMeeplePos = -1;
         playerState.playerReturning = false;
         if (this.gameService.isPlayerPlaying(idx)) {
@@ -146,18 +157,19 @@ export default class Game extends Component {
   };
 
   onPlayerTurn = (playerIdx) => {
+    this.gameService.animationService.promises = {};  // reset animations
+
     this.gameService.updatePlayerState(playerIdx, (playerState) => {
       // reset player state
       playerState.playerDiceRolled = [];
-      playerState.playerDiceToRoll = [];
       playerState.playerStatus = GameService.PlayerStates.PLAYING;
     });
 
     // wait for player input to select diver direction (call onMeepleDirectionSelected())
   };
 
-  onMeepleDirectionSelected = (playerIdx, returning) => {
-    this.gameService.updatePlayerState(playerIdx, (playerState) => {
+  onMeepleDirectionSelected = async (playerIdx, returning) => {
+    this.gameService.updatePlayerState(playerIdx, async (playerState) => {
       if (playerState.playerDiceRolled.length) {
         // ignore if dice already rolled (multi-clicks protection).
         // console.log('onMeepleDirectionSelected ignored');  // #DEBUG
@@ -177,31 +189,30 @@ export default class Game extends Component {
       playerState.playerDiceRolled[1] = rollDice();
 
       // trigger dice animation, onDiceFinishedRolling will be called once it is done
-      playerState.playerDiceToRoll = [];
-      playerState.playerDiceToRoll[0] = playerState.playerDiceRolled[0];
-      playerState.playerDiceToRoll[1] = playerState.playerDiceRolled[1];
+      await this.gameService.animationService.promise('animateDice1Roll', 'animateDice2Roll');
+
+      console.log('...dice rolled; ' + playerState.playerDiceRolled);  // #DEBUG
+      let steps = playerState.playerDiceRolled[0] + 1 + playerState.playerDiceRolled[1] + 1 - playerState.playerPickedTreasures.length;
+      this.moveMeeple(playerIdx, steps)
     });
   };
 
-  onDiceFinishedRolling = (playerIdx) => {
-    let isDiceRolled = false;
-    const playerState = this.gameService.updatePlayerState(playerIdx, (playerState) => {
-      if (!playerState.playerDiceToRoll.length) {
-        // ignore multi-triggers
-        return;
-      }
-      isDiceRolled = true;
-      playerState.playerDiceToRoll = [];  // stop dice animation
-    });
-    if (!isDiceRolled) {
-      // ignore multi-triggers
-      return;
-    }
-
-    console.log('...dice rolled; ' + playerState.playerDiceRolled);  // #DEBUG
-    let steps = playerState.playerDiceRolled[0] + 1 + playerState.playerDiceRolled[1] + 1 - playerState.playerPickedTreasures.length;
-    this.moveMeeple(playerIdx, steps)
-  };
+  // onDiceFinishedRolling = (playerIdx) => {
+  //   let isDiceRolled = false;
+  //   const playerState = this.gameService.updatePlayerState(playerIdx, (playerState) => {
+  //     if (!playerState.playerDiceToRoll.length) {
+  //       // ignore multi-triggers
+  //       return;
+  //     }
+  //     isDiceRolled = true;
+  //     playerState.playerDiceToRoll = [];  // stop dice animation
+  //   });
+  //   if (!isDiceRolled) {
+  //     // ignore multi-triggers
+  //     return;
+  //   }
+  //
+  // };
 
   moveMeeple = (playerIdx, steps) => {
     this.gameService.updatePlayerState(playerIdx, (playerState) => {
@@ -218,6 +229,8 @@ export default class Game extends Component {
       if (!playerState.playerReturning && doStep(playerState.playerMeeplePos) > this.state.treasures.length - 1) {
         playerState.playerReturning = true;
       }
+
+      void this.gameService.animationService.promise('animateMeepleMove');
 
       let step = 0;
       while (step++ < steps) {
@@ -243,12 +256,13 @@ export default class Game extends Component {
   };
 
   // #TEST ONLY
-  onSelectMeeple = (playerIdx) => {
+  onSelectMeeple = async (playerIdx) => {
     this.gameService.updatePlayerState(this.state.playerTurn, (playerState) => {
       playerState.playerStatus = GameService.PlayerStates.DONE;
     });
 
-    this.setState({playerTurn: playerIdx});
+    //this.setState({playerTurn: playerIdx});
+    await this.setStateNow({playerTurn: playerIdx});
 
     this.setState({version: this.state.version + 1}); // this will fireLocalStateUpdated()
   };

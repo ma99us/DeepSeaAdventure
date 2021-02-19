@@ -1,3 +1,42 @@
+export async function elementEventsListener(elem, events, before = null, after = null) {
+  if (elem == null || typeof elem !== "object" || !document.body.contains(elem)) {
+    throw "'elem' should be a DOM element";
+  }
+  if (!Array.isArray(events)) {
+    if (typeof events !== 'string') {
+      throw "'events' should be a name or array of names of DOM events";
+    }
+    events = [events];  // make an array of it
+  }
+
+  return new Promise(resolve => {
+    function onEnd(ev) {
+      events.forEach(evt => {
+        elem.removeEventListener(evt, onEnd);
+      });
+
+      if (after && typeof after === 'function') {
+        after(ev);
+      }
+
+      resolve(ev);
+    }
+
+    events.forEach(evt => {
+      elem.addEventListener(evt, onEnd, false);
+    });
+
+    if (before && typeof before === 'function') {
+      before(elem);
+    }
+  });
+}
+
+export async function transitionListener(elem, before = null, after = null) {
+  const events = ["transitionend", "oTransitionEnd", "transitionend", "webkitTransitionEnd"];
+  return elementEventsListener(elem, events, before, after);
+}
+
 /**
  * perform CSS transition with the callback once done
  * @param elem DOM element
@@ -5,36 +44,11 @@
  * @param callback
  */
 export async function transitionElement(elem, styles, callback = null) {
-  if (elem == null || typeof elem !== "object") {
-    throw "'elem' should be a DOM element";
-  }
   if (styles == null || typeof styles !== "object") {
     throw "'styles' should be an object with style attributes";
   }
-  if (!document.body.contains(elem)) {
-    throw "'elem' element is not on DOM";
-  }
 
-  return new Promise(resolve => {
-    function onEnd(ev) {
-      elem.removeEventListener("transitionend", onEnd);
-      elem.removeEventListener("oTransitionEnd", onEnd);
-      elem.removeEventListener("transitionend", onEnd);
-      elem.removeEventListener("webkitTransitionEnd", onEnd);
-
-      // console.log("transition finished; propertyName=" + ev.propertyName + ", elapsedTime=" + ev.elapsedTime);  //#DEBUG
-
-      if (callback) {
-        callback(ev);
-      }
-      resolve("transitionElement done");
-    }
-
-    elem.addEventListener("transitionend", onEnd, false);
-    elem.addEventListener("oTransitionEnd", onEnd, false);
-    elem.addEventListener("transitionend", onEnd, false);
-    elem.addEventListener("webkitTransitionEnd", onEnd, false);
-
+  return transitionListener(elem, () => {
     // force browser to calculate initial style of the element
     const computedStyle = window.getComputedStyle(elem, null);
     for (let styleName in styles) {
@@ -45,54 +59,32 @@ export async function transitionElement(elem, styles, callback = null) {
     requestAnimationFrame(() => {
       setStyles(elem, styles);
     });
-  });
+  }, callback);
+}
+
+export async function animationListener(elem, before = null, after = null) {
+  const events = ["animationend", "oanimationend", "msAnimationEnd", "webkitAnimationEnd"];
+  return elementEventsListener(elem, events, before, after);
 }
 
 export async function animateElement(elem, animClassName, callback = null) {
-  if (elem == null || typeof elem !== "object") {
-    throw "'elem' should be a DOM element";
-  }
   if (typeof animClassName !== "string") {
     throw "'animClassName' should be a string with animation class name";
   }
-  if (!document.body.contains(elem)) {
-    throw "'elem' element is not on DOM";
-  }
 
-  return new Promise(resolve => {
-    function onEnd(ev) {
-      elem.removeEventListener("animationend", onEnd);
-      elem.removeEventListener("oanimationend", onEnd);
-      elem.removeEventListener("msAnimationEnd", onEnd);
-      elem.removeEventListener("webkitAnimationEnd", onEnd);
-
-      elem.classList.remove(animClassName);
-
-      // console.log("animation finished; propertyName=" + ev.propertyName + ", elapsedTime=" + ev.elapsedTime);  //#DEBUG
-
-      if (callback) {
-        callback(ev);
-      }
-      resolve("animateElement done");
-    }
-
-    elem.addEventListener("animationend", onEnd, false);
-    elem.addEventListener("oanimationend", onEnd, false);
-    elem.addEventListener("msAnimationEnd", onEnd, false);
-    elem.addEventListener("webkitAnimationEnd", onEnd, false);
-
-    // force browser to calculate initial style of the element
-    // const computedStyle = window.getComputedStyle(elem, null);
-    // for (let styleName in styles) {
-    //   void computedStyle.getPropertyValue(styleName);
-    // }
-
+  return animationListener(elem, () => {
     // force browser to render element first, before applying transition result style
     // requestAnimationFrame(() => {
     //   elem.classList.add(animClassName);
     // });
 
     elem.classList.add(animClassName);
+  }, (ev) => {
+    elem.classList.remove(animClassName);
+
+    if (callback && typeof callback === 'function') {
+      callback(ev);
+    }
   });
 }
 

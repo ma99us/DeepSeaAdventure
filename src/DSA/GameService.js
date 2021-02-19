@@ -5,6 +5,7 @@ import HostStorageService from "../services/host-storage-service";
 import MessageBusService from "../services/message-bus-service";
 import RoomService from "./RoomService";
 import {rollDice} from "./PlayerBoard/Dice";
+import {PromiseExState} from "../common/PromiseEx";
 
 export default class GameService {
 
@@ -38,7 +39,6 @@ export default class GameService {
     playerPickedTreasures: [],  // array of treasure ids picked by player on the current dive
     playerReturning: false,     // whether or not the player's diver is on the way back to the sub
     playerMeeplePos: -1,      // player marker position on the treasure track
-    playerDiceToRoll: [],        // transient, do not persist!
     playerDiceRolled: [],        // last turn player dice roll result, like [1-3, 1-3]
   };
 
@@ -49,6 +49,9 @@ export default class GameService {
     this.messageBusService = MessageBusService.getInstance();
     this.localStorageService = new LocalStorageService('HFG');
     this.roomService = new RoomService(this);
+    this.animationService = new PromiseExState((state) => {
+      this.game.setState({animations: state});
+    });
 
     this.readPlayerInfo();
   }
@@ -339,10 +342,10 @@ export default class GameService {
 
     if (!this.gameId) {
       console.log('not in game. not pushing local state.');
-      const timer = setInterval(() => {
-        clearInterval(timer);
-        this.game.processGameStateChange();
-      }, 100);
+      Promise.resolve()
+        .then(() => {
+          this.game.processGameStateChange();
+        });
       return;
     }
 

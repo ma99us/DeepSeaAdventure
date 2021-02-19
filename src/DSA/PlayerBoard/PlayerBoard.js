@@ -25,11 +25,11 @@ const PlayerBoard = (props) => {
     );
   }
 
-  const promises = [new PromiseEx(), new PromiseEx()];
-  Promise.all(promises).then(() => {
-    //console.log('both dice rolled');  // #DEBUG
-    game.onDiceFinishedRolling(idx);
-  });
+  // const promises = [new PromiseEx(), new PromiseEx()];
+  // Promise.all(promises).then(() => {
+  //   //console.log('both dice rolled');  // #DEBUG
+  //   game.onDiceFinishedRolling(idx);
+  // });
   // console.log(`#${idx} ${playerState.playerName}; playerDiceToRoll:${playerState.playerDiceToRoll}`); // #DEBUG
 
   const playerColorStyle = makePlayerColorStyle(playerState);
@@ -54,7 +54,7 @@ const PlayerBoard = (props) => {
   cargoStyle.visibility = playerState.playerPickedTreasures.length ? "visible" : "hidden";
 
   // second part
-  const showSecondPart = playerState.playerDiceRolled.length && !playerState.playerDiceToRoll.length;
+  const showSecondPart = playerState.playerDiceRolled.length && game.gameService.animationService.isDone('animateDice1Roll', 'animateDice2Roll', 'animateMeepleMove');
   const playerPassStyle = {};
   const passStyle = {};
   passStyle.visibility = showSecondPart ? "visible" : "hidden";
@@ -85,9 +85,9 @@ const PlayerBoard = (props) => {
           <img src={thumbs_up} style={goUpStyle} alt="go up"/></div>
         <div id="playerDiceArea">
           <Dice id={playerState.playerDiceRolled[0]}
-                rolled={playerState.playerDiceToRoll[0] != null ? promises[0].onResolve : null}/>
+                rolled={game.gameService.animationService.resolve('animateDice1Roll')}/>
           <Dice id={playerState.playerDiceRolled[1]}
-                rolled={playerState.playerDiceToRoll[1] != null ? promises[1].onResolve : null}/>
+                rolled={game.gameService.animationService.resolve('animateDice2Roll')}/>
         </div>
         <div id="playerCargo" style={cargoStyle}>
           Overburden: -{playerState.playerPickedTreasures.length}</div>

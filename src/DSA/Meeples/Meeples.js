@@ -33,6 +33,7 @@ const Meeples = (props) => {
       style = {transform: `scale(1.0) translate(${offsetX}px, ${offsetY}px) rotate(${rotDeg}deg)`};
     }
     return (<Meeple key={index} id={index} selected={game.state.playerTurn === index} style={style}
+                    moved={game.gameService.animationService.resolve('animateMeepleMove')}
                     clicked={() => clicked(index)}/>);
   });
 
