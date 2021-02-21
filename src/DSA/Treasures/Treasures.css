@@ -10,4 +10,6 @@
     /*position: relative;*/
     position: absolute;
     display: inline-block;
+    transition: all 1.0s;
+    z-index: 3;
 }

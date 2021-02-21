@@ -1,10 +1,7 @@
-import React, {useRef, useEffect} from 'react';
-import * as drawing from "../../common/drawing";
-import GameService from "../GameService";
+import React from 'react';
 import {makePlayerColorStyle} from "../Players/Player";
 import Dice from "./Dice";
 import {makeGlowFilter} from "../../common/drawing";
-import PromiseEx from "../../common/PromiseEx";
 import thumbs_up from "./thumbs_up_60.png";
 import thumbs_down from "./thumbs_down_60.png";
 import pass_hand from "./pass_hand_60.png";
@@ -14,9 +11,9 @@ import './PlayerBoard.css';
 import Treasure from "../Treasures/Treasure";
 
 const PlayerBoard = (props) => {
-  const game = props.game;
-  const idx = props.idx != null ? props.idx : game.state.playerTurn;
-  const style = props.style || {};
+  const game = props.game;  // main game controller
+  const idx = props.idx != null ? props.idx : game.state.playerTurn;  // player index, same as player id
+  const style = props.style || {};  // optional css style to apply to a wrapping dom element
 
   const playerState = game.gameService.getPlayerState(idx);
   if (!playerState) {
@@ -24,13 +21,6 @@ const PlayerBoard = (props) => {
       <div></div>
     );
   }
-
-  // const promises = [new PromiseEx(), new PromiseEx()];
-  // Promise.all(promises).then(() => {
-  //   //console.log('both dice rolled');  // #DEBUG
-  //   game.onDiceFinishedRolling(idx);
-  // });
-  // console.log(`#${idx} ${playerState.playerName}; playerDiceToRoll:${playerState.playerDiceToRoll}`); // #DEBUG
 
   const playerColorStyle = makePlayerColorStyle(playerState);
 

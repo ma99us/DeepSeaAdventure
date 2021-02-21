@@ -4,7 +4,7 @@ import subRotorImg from './sub_rotor.png';
 import './Sub.css';
 
 const Sub = (props) => {
-  const game = props.game;
+  const game = props.game;  // main game controller
 
   return (
     <div className="Sub">

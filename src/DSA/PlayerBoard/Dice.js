@@ -63,7 +63,7 @@ const Dice = (props) => {
       const maxRot = Math.PI;
       const maxOffset = Math.round(context.canvas.height / 4);  // 25% vertical bounce
       const duration = 500 + Math.round(Math.random() * 1500);
-      let timer = setInterval(async () => {
+      const timer = setInterval(async () => {
         let timePassed = Date.now() - start;
 
         if (timePassed >= duration) {

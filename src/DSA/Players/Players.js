@@ -3,7 +3,7 @@ import Player from "./Player";
 import './Players.css';
 
 const Players = (props) => {
-  const game = props.game;
+  const game = props.game;  // main game controller
 
   //#TEST: only for development
   const clicked = (idx) => {

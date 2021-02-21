@@ -1,5 +1,6 @@
 import React, {useRef, useEffect} from 'react';
 import {loadImage} from '../../common/drawing';
+import {transitionListener} from "../../common/dom-animator";
 import tokens_60 from './tokens_60.png';
 import blank_token_60 from './blank_token_60.png';
 import './Treasures.css';
@@ -26,10 +27,11 @@ async function initBlank() {
 }
 
 const Treasure = (props) => {
-  const id = props.id;
-  const masked = props.masked;
-  const rot = props.rot || 0;
-  const style = props.style;
+  const id = props.id;  // treasure id
+  const masked = props.masked;  // if true - show treasure back side, false - show value side
+  const rot = props.rot || 0; // rotate treasure image in radians
+  const style = props.style;  // optional style to apply to wrapping DOM element
+  const moved = props.moved;  // if not null - animation done callback
 
   const row = Math.floor(id / 10);
   const col = id % 10 + 1;
@@ -61,7 +63,14 @@ const Treasure = (props) => {
     const canvas = canvasRef.current;
     const context = canvas.getContext('2d');
     void drawElement(context);
-  }, [canvasRef, id, masked, rot, col, row]);
+
+    if(moved){
+      transitionListener(canvasRef.current).then((ev) => {
+        console.log("Treasure id=" + id + " transition finished; propertyName=" + ev.propertyName + ", elapsedTime=" + ev.elapsedTime);  //#DEBUG
+        moved(id);
+      });
+    }
+  }, [canvasRef, id, masked, rot, col, row, moved]);
 
   return (
     <canvas className="Treasure" ref={canvasRef} onClick={props.clicked} width={60} height={60} style={style}/>

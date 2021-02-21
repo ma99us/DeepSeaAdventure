@@ -28,21 +28,36 @@
     height: 40px;
     text-align: right;
     /*border: solid 1px gold;*/
+    z-index: 0;
 }
 
 .PlayerScore{
+    position: relative;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 5px;
+    width: 30px;
+    height: 25px;
+    /*border: solid 1px blue;*/
+}
+
+.PlayerScoreValue{
+    position: absolute;
     display: inline-block;
     vertical-align: middle;
     font-size: larger;
     font-weight: bolder;
-    margin-right: 5px;
+    /*font-size: x-large;*/
+    width: 30px;
+    line-height: 25px;
+    text-align: center;
     /*border: solid 1px red;*/
 }
 
 .PlayerName{
     display: inline-block;
     vertical-align: middle;
-    width: 150px;
+    width: 130px;
     text-align: center;
     /*border: solid 1px red;*/
 }
@@ -59,4 +74,21 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.animate-glow {
+    font-size: x-large;
+    animation: glow 1.0s 2 alternate ease-in-out;
+    /*animation: glow 1s infinite alternate ease-in-out;*/
+}
+
+@keyframes glow {
+    from {
+        color: white;
+        text-shadow: none;
+    }
+    to {
+        color: yellow;
+        text-shadow: 5px 5px 10px orangered, 5px -5px 10px orangered, -5px 5px 10px orangered, -5px -5px 10px orangered;
+    }
 }

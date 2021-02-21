@@ -1,5 +1,4 @@
 import React, {Component} from 'react';
-import './Game.css';
 import Prompt, {registerGlobalErrorHandler} from "../common/prompt-component";
 import Bubbles from "./Bubbles/Bubbles";
 import Sub from "./Sub/Sub";
@@ -11,6 +10,7 @@ import GameService from "./GameService";
 import Players from "./Players/Players";
 import PlayerBoard from "./PlayerBoard/PlayerBoard";
 import {rollDice} from "./PlayerBoard/Dice";
+import './Game.css';
 
 export default class Game extends Component {
 
@@ -245,6 +245,12 @@ export default class Game extends Component {
 
         playerState.playerMeeplePos = pos;
       }
+
+      if(steps === 0){
+        // if meeple did not move, resolve the animation right away
+        this.gameService.animationService.resolve('animateMeepleMove')();
+      }
+
       console.log("meeple #" + playerIdx + " moved by: " + steps + "; playerReturning: " + playerState.playerReturning + ", meeple pos=" + playerState.playerMeeplePos);
     });
 
@@ -274,10 +280,16 @@ export default class Game extends Component {
   //   this.setState({selectedTreasure: selected});
   // };
 
-  onPickTreasure = (playerIdx, treasureIdx) => {
+  onPickTreasure = async (playerIdx, treasureIdx) => {
     if (this.state.treasures[treasureIdx] == null) {
       return; // multi-click protection
     }
+
+    //this.setState({selectedTreasure: treasureIdx});
+    this.gameService.updatePlayerState(playerIdx, playerState => {
+      playerState.onSelectedTreasure = treasureIdx;
+    });
+    await this.gameService.animationService.promise('animateTreasureMove');
 
     const treasures = [...this.state.treasures];
     const id = treasures.splice(treasureIdx, 1, null)[0];
@@ -287,21 +299,33 @@ export default class Game extends Component {
 
     this.gameService.updatePlayerState(playerIdx, playerState => {
       playerState.playerPickedTreasures.push(id);
+      playerState.onSelectedTreasure = null;
     });
 
     this.onPlayerTurnsEnd(playerIdx);
   };
 
-  onPlayerTurnsEnd = (playerIdx) => {
+  onPlayerTurnsEnd = async (playerIdx) => {
+    let doScoreAnimation = false;
     this.gameService.updatePlayerState(playerIdx, (playerState) => {
       //TODO: determine winners and losers here
       if (playerState.playerMeeplePos < 0) {
+        doScoreAnimation = true;
+        playerState.onOldPlayerSavedTreasures = [...playerState.playerSavedTreasures];
         playerState.playerSavedTreasures = [...playerState.playerSavedTreasures, ...playerState.playerPickedTreasures];
         playerState.playerStatus = GameService.PlayerStates.WON;
       } else {
         playerState.playerStatus = GameService.PlayerStates.DONE;
       }
     });
+
+    if (doScoreAnimation) {
+      await this.gameService.animationService.promise('animateScoreGlow');
+
+      this.gameService.updatePlayerState(playerIdx, (playerState) => {
+        playerState.onOldPlayerSavedTreasures = null;
+      });
+    }
 
     this.gameService.advancePlayerTurn(false);
 

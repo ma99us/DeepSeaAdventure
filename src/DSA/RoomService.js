@@ -39,7 +39,7 @@ export default class RoomService {
   getRooms() {
     return this.hostStorageService.get("rooms", 0, -1, API.HOST_DB_NAME)   // use home db
       .then(data => {
-        return ((!Array.isArray(data) && data !== null) ? [data] : data) || [];
+        return ((!Array.isArray(data) && data != null) ? [data] : data) || [];
       }).then(rooms => {
         this.onAllRoomsUpdate(rooms);
         return rooms;
@@ -51,6 +51,7 @@ export default class RoomService {
   getRoom(gameId) {
     return this.getRooms()
       .then(rooms => {
+        // eslint-disable-next-line
         return rooms ? rooms.find(l => l && l.id == gameId) : null;   // intentional equal-ish
       }).then(room => {
         if (room && (room.version > this.room.version || room.version === 0)) {

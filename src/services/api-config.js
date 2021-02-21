@@ -31,6 +31,6 @@ export default class API {
       return this.HOST_WEBSOCKET_URL;
     }
     const socketHost = API.HOST_LOCATION ? 'ws://' + API.HOST_LOCATION : '';
-    return socketHost + '/mike-db/subscribe' + '/' + dbName;
+    return socketHost + '/mike-db/subscribe/' + dbName;
   }
 };

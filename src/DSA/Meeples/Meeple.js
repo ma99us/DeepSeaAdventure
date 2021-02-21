@@ -1,8 +1,8 @@
 import React, {useRef, useEffect} from 'react';
 import {loadImage} from '../../common/drawing';
 import tokens_40 from './meeples_40.png';
+import {transitionListener} from "../../common/dom-animator";
 import './Meeples.css';
-import {transitionElement, transitionListener} from "../../common/dom-animator";
 
 export const MeeplesIdsNum = 6;
 export const MeeplesColors = ['#710B06', '#0B5A23', '#003277', '#A24300', '#BDA400', '#351E2E'];
@@ -48,7 +48,7 @@ const Meeple = (props) => {
 
     if(moved){
       transitionListener(canvasRef.current).then((ev) => {
-        console.log("Meeple transition finished; propertyName=" + ev.propertyName + ", elapsedTime=" + ev.elapsedTime);  //#DEBUG
+        console.log("Meeple #" + id + " transition finished; propertyName=" + ev.propertyName + ", elapsedTime=" + ev.elapsedTime);  //#DEBUG
         moved(id);
       });
     }

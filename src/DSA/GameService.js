@@ -1,11 +1,10 @@
-import {MeeplesIdsNum, MeeplesColors} from "./Meeples/Meeple";
 import API from "../services/api-config";
 import LocalStorageService from "../services/local-storage-service";
 import HostStorageService from "../services/host-storage-service";
 import MessageBusService from "../services/message-bus-service";
 import RoomService from "./RoomService";
-import {rollDice} from "./PlayerBoard/Dice";
 import {PromiseExState} from "../common/PromiseEx";
+import {MeeplesIdsNum} from "./Meeples/Meeple";
 
 export default class GameService {
 
@@ -24,7 +23,6 @@ export default class GameService {
     roundNum: 0,                // game round number
     // game specific properties:
     treasures: [],              // array of treasure ids, null - for picked ones
-    selectedTreasure: null      // index of the treasure on a track which is selected by the current player
   };
 
   // Each player state object template
@@ -124,7 +122,7 @@ export default class GameService {
 
   get isMyTurn() {
     const state = this.state;
-    return this.state.playerTurn === this.myPlayerId;
+    return state.playerTurn === this.myPlayerId;
   }
 
   get playersTotal() {

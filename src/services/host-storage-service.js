@@ -225,7 +225,7 @@ export default class HostStorageService {
     if (this.sessionId) {
       headers.SESSION_ID = this.sessionId;  // always send session id with every request header
     }
-    if (typeof value === 'string' && value !== null) {
+    if (typeof value === 'string' && value != null) {
       headers['Content-Type'] = 'text/plain;charset=utf-8';
     } else {
       headers['Content-Type'] = 'application/json;charset=utf-8';
@@ -234,7 +234,7 @@ export default class HostStorageService {
   }
 
   prepareBody(value) {
-    if (typeof value === 'string' && value !== null) {
+    if (typeof value === 'string' && value != null) {
       return value;
     } else {
       return JSON.stringify(value);

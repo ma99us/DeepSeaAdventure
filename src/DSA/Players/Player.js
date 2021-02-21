@@ -1,9 +1,10 @@
-import React, {useRef, useEffect} from 'react';
-import './Players.css';
+import React from 'react';
 import * as drawing from "../../common/drawing";
 import GameService from "../GameService";
 import {treasureIdToPoints} from "../Treasures/Treasure";
 import Treasure from "../Treasures/Treasure";
+import ScoreLabel from "./ScoreLabel";
+import './Players.css';
 
 export function makePlayerColorStyle(playerState, opacity = 1) {
   const color = drawing.colorStyleToArray(playerState ? playerState.playerColor : null);
@@ -12,9 +13,9 @@ export function makePlayerColorStyle(playerState, opacity = 1) {
 }
 
 const Player = (props) => {
-  const game = props.game;
-  const idx = props.idx;
-  const style = props.style || {};
+  const game = props.game;  // main game controller
+  const idx = props.idx;  // player index, same as player id
+  const style = props.style || {};  // optional style for the wrapper div
 
   const playerState = game.gameService.getPlayerState(idx);
   const playerColorStyle = makePlayerColorStyle(playerState);
@@ -41,13 +42,16 @@ const Player = (props) => {
     tStyle.top = "-10px";
     return <Treasure key={idx} id={tid} style={tStyle}/>
   });
+
+  const oldPlayerScore = playerState.onOldPlayerSavedTreasures != null ? playerState.onOldPlayerSavedTreasures.reduce((score, tid) => score + treasureIdToPoints(tid), 0) : null;
   const playerScore = playerState.playerSavedTreasures.reduce((score, tid) => score + treasureIdToPoints(tid), 0);
+  const animateScoreGlow = game.gameService.animationService.resolve('animateScoreGlow');
 
   return (
-    <div>
-      <div className="PlayerTreasures">{treasures}</div>
+    <div id={`player${idx}Div`}>
+      <div id={`player${idx}Treasures`} className="PlayerTreasures">{treasures}</div>
       <div className="Player" style={style} onClick={props.clicked}>
-        <div className="PlayerScore">{playerScore}</div>
+        <ScoreLabel tovalue={playerScore} fromvalue={oldPlayerScore} ondone={animateScoreGlow}/>
         <div className="PlayerName player-text truncate-text"
              style={{color: playerColorStyle}}>{playerState.playerName}</div>
       </div>
