@@ -1,6 +1,6 @@
 import React from 'react';
-import {getElementsOffset} from "../../common/dom-animator";
-import Treasure, {TreasureTypesNum, TreasureIds} from "./Treasure";
+import {getElementsOffset, sleep} from "../../common/dom-animator";
+import Treasure, {TreasureTypesNum, TreasureIds, TreasureGroup} from "./Treasure";
 import './Treasures.css';
 
 export function makeTreasureTrackIds() {
@@ -32,7 +32,6 @@ export function getTreasurePos(pos) {
     return {offsetY: prevY, rotDeg: rotDeg};
   };
 
-  //const rotDeg = -Math.pow(Math.sin(Math.PI / 20 * pos), 2) * 90;
   const offsetX = Math.sin(Math.PI / 20 * pos) * xSpan + x0;
   let {offsetY, rotDeg} = getOffsetY(pos);
   offsetY += y0;
@@ -50,29 +49,52 @@ const Treasures = (props) => {
     console.log('Treasure #' + id + ' clicked');
   };
 
+  const animateTreasureTrack = game.gameService.animationService.resolve('animateTreasureTrack');
+  const animateTreasureTrackIsDone = game.gameService.animationService.isDone('animateTreasureTrack');
+  const animateTreasureMove = game.gameService.animationService.resolve('animateTreasureMove');
+
   const playerIdx = game.state.playerTurn;
   const playerState = game.gameService.getPlayerState(playerIdx);
   const selectedTreasure = playerState ? playerState.onSelectedTreasure : null;
 
+  let lastGoodIdx = 0;
   const treasures = game.state.treasures.map((id, index) => {
-    const {offsetX, offsetY, rotDeg} = getTreasurePos(index);
-    if(selectedTreasure !== index){
-      // console.log(`index=${index}, offsetX=${offsetX}, offsetY=${offsetY}, sin=${sin}`);    // #DEBUG
-      const style = {transform: `scale(0.8) translate(${offsetX}px, ${offsetY}px) rotate(${rotDeg}deg)`};
-      return (<Treasure key={index} id={id} masked={true} style={style}
-                        clicked={() => clicked(index)}/>);
-    } else {
+    const idx = id != null ? lastGoodIdx : index;
+    const {offsetX, offsetY, rotDeg} = getTreasurePos((animateTreasureTrack || animateTreasureTrackIsDone) ? idx :index);
+    lastGoodIdx += id != null ? 1 : 0;
+    // console.log(`index=${index}, offsetX=${offsetX}, offsetY=${offsetY}, rotDeg=${rotDeg}`);    // #DEBUG
+
+    if (animateTreasureMove && selectedTreasure === index) {
+      // animate treasure pick-up by player
       const treasuresElem = document.getElementById("Treasures");
       const playerTreasuresElem = document.getElementById(`player${playerIdx}Treasures`);
       let {dx, dy} = getElementsOffset(treasuresElem, playerTreasuresElem);
-      dx -= 260;  // TODO: this should not be hardcoded
-      dy -= 10;  // TODO: this should not be hardcoded
+      dx -= 159;  // TODO: this should not be hardcoded
+      dy -= 9;  // TODO: this should not be hardcoded
       const style = {transform: `scale(1.0) translate(${dx}px, ${dy}px) rotate(0deg)`};
-      return (<Treasure key={index} id={id} masked={false} style={style}
-                        moved={game.gameService.animationService.resolve('animateTreasureMove')}
-                        />);
+      style.transition = "all 1.0s";
+      return (<TreasureGroup key={index} id={id} masked={true} style={style}
+                        moved={animateTreasureMove}
+      />);
+    }
+    else {
+      // normal track layout or animated, hiding picked treasures
+      const doHidePicked = (animateTreasureTrack || animateTreasureTrackIsDone) && id == null;
+      const style = {transform: `scale(0.8) translate(${offsetX}px, ${offsetY}px) rotate(${rotDeg}deg)`};
+      style.opacity = doHidePicked ? "0" : "1";
+      style.transition = animateTreasureTrack ? "all 1.0s" : "";
+      return (<TreasureGroup key={index} id={id} masked={true} style={style}
+                        clicked={() => clicked(index)}/>);
     }
   });
+
+  if (animateTreasureTrack) {
+    // just resolve animation after some time > transition time. FIXME: there is got to be a better way to detect when animation is done!?
+    sleep(1500).then(() => {
+      // console.log("animateTreasureTrack done.");  //#DEBUG
+      animateTreasureTrack();
+    });
+  }
 
   return (
     <div id="Treasures" className="Treasures">{treasures}</div>

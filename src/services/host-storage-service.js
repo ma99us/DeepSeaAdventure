@@ -12,7 +12,6 @@ export default class HostStorageService {
     this.API = API;
     this.messageBusService = MessageBusService;
 
-    //this.HttpHeaderheaders.common.API_KEY = this.API.HOST_API_KEY; // always send api key with every request header
     this.sessionId = null;
   }
 
@@ -38,7 +37,7 @@ export default class HostStorageService {
     };
     this.dataStream.onopen = () => {
       console.log("--- on socket opened");
-      this.sendMessage({API_KEY: API.HOST_API_KEY}).then(() => {   // got to send API_KEY first, otherwise socket will be closed
+      this.sendMessage({API_KEY: API.HOST_API_KEY}).then(() => {   // got to send API_KEY first, otherwise socket will be closed by host
         this.startKeepAlive();
       });
     };

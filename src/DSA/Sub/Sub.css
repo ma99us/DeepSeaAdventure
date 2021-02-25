@@ -1,15 +1,24 @@
 .Sub {
     position: relative;
+    text-align: left;
+    margin-left: 200px;
 }
 
 .submarine{
-
+    position: relative;
 }
 
 .subrotor {
     position: absolute;
     left: -35px;
     top: 90px;
+}
+
+.Marker{
+    position: absolute;
+    left: 15px;
+    top: 78px;
+    transition: all 1.0s;
 }
 
 @media (prefers-reduced-motion: no-preference) {

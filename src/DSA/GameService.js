@@ -9,7 +9,7 @@ import {MeeplesIdsNum} from "./Meeples/Meeple";
 export default class GameService {
 
   static GameStates = {STARTING: 1, PLAYING: 5, FINISHED: 10};
-  static PlayerStates = {WAITING: 1, PLAYING: 3, DONE: 6, LOST: 11, WON: 12, SPECTATOR: 15};
+  static PlayerStates = {WAITING: 1, PLAYING: 3, DONE: 6, LOST: 11, WON: 12};
 
   static GameName = "Deep Sea Adventure";  // game specific
 
@@ -23,6 +23,7 @@ export default class GameService {
     roundNum: 0,                // game round number
     // game specific properties:
     treasures: [],              // array of treasure ids, null - for picked ones
+    air: 25                 // amount of air left in the sub
   };
 
   // Each player state object template
@@ -48,6 +49,7 @@ export default class GameService {
     this.localStorageService = new LocalStorageService('HFG');
     this.roomService = new RoomService(this);
     this.animationService = new PromiseExState((state) => {
+      // console.log("animations:", state);
       this.game.setState({animations: state});
     });
 
@@ -157,7 +159,7 @@ export default class GameService {
       throw "Name '" + playerName + "' already taken. Choose another.";
     }
 
-    const player = {...GameService.PlayerStateTemplate};
+    const player = clone(GameService.PlayerStateTemplate);
     player.playerName = playerName;
     player.playerColor = playerColor;
     players.push(player);
@@ -203,10 +205,10 @@ export default class GameService {
    * @param funk callback to iterate over player states array
    * @returns {*[]} modified players array
    */
-  updatePlayersState(funk) {
+  async updatePlayersState(funk) {
     const players = [...this.game.state.players];
     funk(players);
-    this.game.setState({players: players});
+    await this.game.setStateNow({players: players});
     return players;
   }
 
@@ -216,13 +218,13 @@ export default class GameService {
    * @param funk callback to modify player state in
    * @returns {*} modified player state
    */
-  updatePlayerState(idx, funk) {
+  async updatePlayerState(idx, funk) {
     const players = [...this.game.state.players];
     if (idx >= players.length) {
       throw 'No player id: ' + idx;
     }
     funk(players[idx]);
-    this.game.setState({players: players});
+    await this.game.setStateNow({players: players});
     return players[idx];
   }
 
@@ -247,11 +249,21 @@ export default class GameService {
   isRoundStarted() {
     for (let i = 0; this.isGamePlaying && i < this.game.state.players.length; i++) {
       const playerState = this.game.state.players[i];
-      if (playerState.playerStatus > GameService.PlayerStates.WAITING && playerState.playerStatus < GameService.PlayerStates.LOST) {
+      if (playerState.playerStatus > GameService.PlayerStates.WAITING) {
         return true;
       }
     }
     return false;
+  }
+
+  isRoundEnded() {
+    for (let i = 0; this.isGamePlaying && i < this.game.state.players.length; i++) {
+      const playerState = this.game.state.players[i];
+      if (!playerState.playerStatus || playerState.playerStatus < GameService.PlayerStates.LOST) {
+        return false;
+      }
+    }
+    return true;
   }
 
   //////// host state synchronization methods
@@ -362,4 +374,8 @@ export default class GameService {
  */
 export function getRandomRange(from = 1, to = 999999) {
   return Math.floor(Math.random() * (to + 1 - from) + from);
+}
+
+export function clone(obj) {
+  return JSON.parse(JSON.stringify(obj));
 }

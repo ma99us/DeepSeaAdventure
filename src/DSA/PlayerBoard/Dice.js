@@ -64,9 +64,9 @@ const Dice = (props) => {
       const maxOffset = Math.round(context.canvas.height / 4);  // 25% vertical bounce
       const duration = 500 + Math.round(Math.random() * 1500);
       const timer = setInterval(async () => {
-        let timePassed = Date.now() - start;
-
-        if (timePassed >= duration) {
+        const timePassed = Date.now() - start;
+        const timeLeft = duration - timePassed;
+        if (timeLeft <= 0) {
           // finish the animation
           clearInterval(timer);
           // draw the final state of animation

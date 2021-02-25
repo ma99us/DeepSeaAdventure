@@ -117,6 +117,14 @@ and (orientation: portrait) {
     }
 }
 
+/*Work monitor*/
+@media only screen
+and (min-device-width: 1400px)
+and (max-device-width: 1999px) {
+    body {
+        zoom: 0.9;
+    }
+}
 
 /*iPad Pro 10 inch landscape*/
 @media only screen
@@ -125,16 +133,6 @@ and (max-device-width: 2224px)
 and (orientation: landscape) {
     body {
         zoom: 1.7;
-    }
-}
-
-/*iPad Pro 12 inch landscape*/
-@media only screen
-and (min-device-width: 2225px)
-and (max-device-width: 2732px)
-and (orientation: landscape) {
-    body {
-        zoom: 2.1;
     }
 }
 
@@ -148,9 +146,39 @@ and (orientation: portrait) {
     }
 }
 
-/*iPad Pro 12 inch tablet portrait*/
+/*iPad Pro 11 inch landscape*/
+@media only screen
+and (min-device-width: 2225px)
+and (max-device-width: 2501px)
+and (orientation: landscape) {
+    body {
+        zoom: 1.7;
+    }
+}
+
+/*iPad Pro 11 inch  portrait*/
 @media only screen
 and (min-device-height: 2225px)
+and (max-device-height: 2388px)
+and (orientation: portrait) {
+    body {
+        zoom: 1.40;
+    }
+}
+
+/*iPad Pro 12 inch landscape*/
+@media only screen
+and (min-device-width: 2501px)
+and (max-device-width: 2732px)
+and (orientation: landscape) {
+    body {
+        zoom: 2.1;
+    }
+}
+
+/*iPad Pro 12 inch tablet portrait*/
+@media only screen
+and (min-device-height: 2390px)
 and (max-device-height: 3000px)
 and (orientation: portrait) {
     body {

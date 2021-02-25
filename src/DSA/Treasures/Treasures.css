@@ -10,6 +10,12 @@
     /*position: relative;*/
     position: absolute;
     display: inline-block;
-    transition: all 1.0s;
+    /*transition: all 1.0s;*/
+    z-index: 3;
+}
+
+.TreasureGroup {
+    position: absolute;
+    display: inline-block;
     z-index: 3;
 }

@@ -28,6 +28,9 @@ const Meeple = (props) => {
 
   // draw only once element gets attached to DOM
   useEffect(() => {
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+
     const drawElement = async (context) => {
       const [tokensImg, tokenWidth, tokenHeight] = await initTokens();
 
@@ -42,13 +45,11 @@ const Meeple = (props) => {
       context.translate(-width / 2, -height / 2);
     };
 
-    const canvas = canvasRef.current;
-    const context = canvas.getContext('2d');
     void drawElement(context);
 
     if(moved){
-      transitionListener(canvasRef.current).then((ev) => {
-        console.log("Meeple #" + id + " transition finished; propertyName=" + ev.propertyName + ", elapsedTime=" + ev.elapsedTime);  //#DEBUG
+      transitionListener(canvas).then((ev) => {
+        // console.log("Meeple #" + id + " transition finished; propertyName=" + ev.propertyName + ", elapsedTime=" + ev.elapsedTime);  //#DEBUG
         moved(id);
       });
     }

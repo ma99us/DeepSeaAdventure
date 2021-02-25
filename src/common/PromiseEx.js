@@ -72,7 +72,7 @@ export class PromiseExState {
 
   /**
    * Create a named Promise or a group of Promises.
-   * @param key name or an array of keys names for each Promise in a group.
+   * @param keys name or an array of keys names for each Promise in a group.
    * @returns {Promise<[PromiseEx , any]>} wrapper promise, which resolves when all promises in the group resolve.
    */
   promise(...keys) {
@@ -81,15 +81,20 @@ export class PromiseExState {
       this.promises[key] = p;
       return p;
     });
+
     const pAll = Promise.all(pArr);
     pAll.finally(() => {
+      // call-back after Promise resolution
       if (this.funk) {
         this.funk(this.state);
       }
     });
+
     if (this.funk) {
+      // call-back before Promise resolution
       this.funk(this.state);
     }
+
     return pAll;
   }
 
@@ -109,6 +114,28 @@ export class PromiseExState {
   reject(key) {
     const p = this.promises[key];
     return (p && !p.isDone) ? p.onReject : null;  // can be resolved/rejected only once!
+  }
+
+  /**
+   * Removes promise from collection. Only resolved or rejected (done) promises can be removed.
+   * @param keys promise name or array of promises names to remove
+   */
+  remove(...keys) {
+    keys.forEach((key) => {
+      delete this.promises[key];
+    });
+  }
+
+  /**
+   * Removes all resolved promises from collection.
+   */
+  clean() {
+    const doneKeys = Object.keys(this.promises).filter((key) => {
+      const p = this.promises[key];
+      return p != null && p.isDone;
+    });
+
+    this.remove(...doneKeys);
   }
 
   /**

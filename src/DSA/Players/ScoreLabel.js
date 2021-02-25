@@ -39,10 +39,12 @@ const ScoreLabel = (props) => {
     if (onDone && fromValue != null) {
       // animate glowing
       void animateElement(elem, 'animate-glow').then((ev) => {
-        // onDone(ev);
+        // console.log('onDone(ev)='+onDone);
+        onDone(ev);
       });
       // at the same time, animate value increment
       animateValue(1000).then(() => {
+        // console.log('onDone='+onDone);
         onDone();
       });
     } else {

@@ -6,15 +6,17 @@ import {treasureIdToPoints} from "./Treasures/Treasure";
 import Treasures, {makeTreasureTrackIds} from "./Treasures/Treasures";
 import {MeeplesColors} from "./Meeples/Meeple";
 import Meeples from "./Meeples/Meeples";
-import GameService from "./GameService";
+import GameService, {clone} from "./GameService";
 import Players from "./Players/Players";
 import PlayerBoard from "./PlayerBoard/PlayerBoard";
 import {rollDice} from "./PlayerBoard/Dice";
 import './Game.css';
+import {Debug} from "./Debug";
+import {sleep} from "../common/dom-animator";
 
 export default class Game extends Component {
 
-  state = {...GameService.GameStateTemplate};
+  state = clone(GameService.GameStateTemplate);
 
   constructor(props) {
     super(props);
@@ -33,18 +35,16 @@ export default class Game extends Component {
 
   // Game DOM initial load
   componentDidMount() {
-    this.prompt.showWarning("Loading...", -1);
+    void this.prompt.showWarning("Loading...", -1);
 
+    // connect to host and start the game
     this.gameService.init();
-
-    // this.processGameStateChange();
   }
 
   // this.state updated!
   componentDidUpdate(prevProps, prevState) {
     if (this.state.version > prevState.version) {
       console.log("componentDidUpdate; version=" + this.state.version);  //#DEBUG
-      //this.processGameStateChange();
       this.gameService.fireLocalStateUpdated();
     }
   }
@@ -66,27 +66,44 @@ export default class Game extends Component {
       console.log(err.stack);
     }
 
-    this.prompt.showError(text);
+    void this.prompt.showError(text);
   };
 
   onGameLoaded = () => {
-    this.prompt.hidePrompt();
+    void this.prompt.hidePrompt();
   };
 
   // The Game State Machine:
-  processGameStateChange = () => {
+  processGameStateChange = async () => {
     //TODO:
     // console.log('processGameStateChange;');
 
     if (!this.gameService.isGameReady) {
-      console.log('start game...');
-      this.startGame();
+      console.log('* on start game...');
+      void this.startGame();
+
+      return;
     } else if (this.gameService.isGamePlaying && !this.gameService.isRoundStarted()) {
-      console.log('start round...');
-      this.onGameRoundStart();
-    } else if (!this.gameService.isActivePlayer(this.state.playerTurn)) {
-      console.log('start player #' + this.state.playerTurn + ' turn...');
-      this.onPlayerTurn(this.state.playerTurn);
+      console.log('* on game round #' + this.state.roundNum + ' start...');
+      await this.onGameRoundStart();
+
+      void this.processGameStateChange(); // recurse
+    } else if (this.gameService.isGamePlaying && this.gameService.isRoundEnded()) {
+      console.log('* on game round #' + this.state.roundNum + ' end...');
+      await this.onGameRoundEnd();
+
+      void this.processGameStateChange(); // recurse
+    } else if (this.gameService.isGamePlaying && this.gameService.isPlayerPlaying(this.state.playerTurn) && !this.gameService.isActivePlayer(this.state.playerTurn)) {
+      console.log('* on player #' + this.state.playerTurn + ' turn...');
+      await this.onPlayerTurn(this.state.playerTurn);
+
+      void this.processGameStateChange(); // recurse
+    } else if(this.gameService.isGamePlaying && !this.gameService.isPlayerPlaying(this.state.playerTurn)){
+      console.log('* skipping player #' + this.state.playerTurn + ' turn...');
+      this.gameService.advancePlayerTurn(false);
+      this.setState({version: this.state.version + 1}); // this will fireLocalStateUpdated()
+
+      // return;
     }
   };
 
@@ -106,8 +123,8 @@ export default class Game extends Component {
     this.setState({version: this.state.version + 1}); // this will fireLocalStateUpdated()
   };
 
-  startGame = () => {
-    this.gameService.updatePlayersState((players) => {
+  startGame = async () => {
+    await this.gameService.updatePlayersState((players) => {
       ////// #TEST
       this.gameService.addPlayer('Mike aka Very Long Name', MeeplesColors[0], players);
       this.gameService.addPlayer('Stephan', MeeplesColors[1], players);
@@ -127,42 +144,59 @@ export default class Game extends Component {
     // update main game state
     this.setState({gameStatus: GameService.GameStates.PLAYING});
 
-    //this.setState({version: this.state.version + 1}); // this will fireLocalStateUpdated()
-    this.setStateNow({version: this.state.version + 1})
-      .then(() => {
-        console.log("setStateNow; version=" + this.state.version);  // #DEBUG
-      });
-    console.log("startGame; version=" + this.state.version);  // #DEBUG
+    this.setState({version: this.state.version + 1}); // this will fireLocalStateUpdated()
   };
 
-  onGameRoundStart = () => {
-    this.gameService.updatePlayersState(players => {
-      // reset players states to start the round
+  onGameRoundStart = async () => {
+    await this.gameService.updatePlayersState(players => {
+      // reset players states to start the first player turn
       players.forEach((playerState, idx) => {
         playerState.playerPickedTreasures = [];
         playerState.playerDiceRolled = [];
         playerState.playerMeeplePos = -1;
         playerState.playerReturning = false;
-        if (this.gameService.isPlayerPlaying(idx)) {
-          playerState.playerStatus = GameService.PlayerStates.PLAYING;
-        }
+        playerState.playerStatus = GameService.PlayerStates.DONE;
       });
     });
 
     this.setState({roundNum: this.state.roundNum + 1});
+    this.setState({air: 25});
     this.setState({playerTurn: 0});
 
-    // generate new treasures track
-    this.setState({treasures: makeTreasureTrackIds()});
+    let treasures = [...this.state.treasures];
+    if(treasures.length){
+      // prepare treasures track from the previous round
+      await this.gameService.animationService.promise('animateTreasureTrack');
+      treasures = treasures.filter(id => id !== null);
+      await this.setStateNow({treasures: treasures});
+      this.gameService.animationService.remove('animateTreasureTrack');
+    } else {
+      // generate new treasures track
+      await this.setStateNow({treasures: makeTreasureTrackIds()});
+    }
   };
 
-  onPlayerTurn = (playerIdx) => {
-    this.gameService.animationService.promises = {};  // reset animations
+  onPlayerTurn = async (playerIdx) => {
+    this.gameService.animationService.clean();  // reset animations
 
-    this.gameService.updatePlayerState(playerIdx, (playerState) => {
+    const playerState = this.gameService.getPlayerState(playerIdx);
+    let outOfAir = this.state.air < 0;
+    if(playerState.playerMeeplePos >= 0){
+      let air = this.state.air - playerState.playerPickedTreasures.length;
+      if (air < 0) {
+        outOfAir = true;
+      }
+      this.setState({air: air});
+    }
+
+    if (outOfAir) {
+      await this.onDropAllPickedTreasures(playerIdx);
+    }
+
+    await this.gameService.updatePlayerState(playerIdx, (playerState) => {
       // reset player state
       playerState.playerDiceRolled = [];
-      playerState.playerStatus = GameService.PlayerStates.PLAYING;
+      playerState.playerStatus = outOfAir ? GameService.PlayerStates.LOST : GameService.PlayerStates.PLAYING;
     });
 
     // wait for player input to select diver direction (call onMeepleDirectionSelected())
@@ -172,10 +206,8 @@ export default class Game extends Component {
     this.gameService.updatePlayerState(playerIdx, async (playerState) => {
       if (playerState.playerDiceRolled.length) {
         // ignore if dice already rolled (multi-clicks protection).
-        // console.log('onMeepleDirectionSelected ignored');  // #DEBUG
         return;
       }
-      // console.log('onMeepleDirectionSelected'); // #DEBUG
 
       // roll the dice
       if (returning && !playerState.playerReturning) {
@@ -188,7 +220,6 @@ export default class Game extends Component {
       playerState.playerDiceRolled[0] = rollDice();
       playerState.playerDiceRolled[1] = rollDice();
 
-      // trigger dice animation, onDiceFinishedRolling will be called once it is done
       await this.gameService.animationService.promise('animateDice1Roll', 'animateDice2Roll');
 
       console.log('...dice rolled; ' + playerState.playerDiceRolled);  // #DEBUG
@@ -197,36 +228,11 @@ export default class Game extends Component {
     });
   };
 
-  // onDiceFinishedRolling = (playerIdx) => {
-  //   let isDiceRolled = false;
-  //   const playerState = this.gameService.updatePlayerState(playerIdx, (playerState) => {
-  //     if (!playerState.playerDiceToRoll.length) {
-  //       // ignore multi-triggers
-  //       return;
-  //     }
-  //     isDiceRolled = true;
-  //     playerState.playerDiceToRoll = [];  // stop dice animation
-  //   });
-  //   if (!isDiceRolled) {
-  //     // ignore multi-triggers
-  //     return;
-  //   }
-  //
-  // };
-
   moveMeeple = (playerIdx, steps) => {
     this.gameService.updatePlayerState(playerIdx, (playerState) => {
 
-      const doStep = (pos) => {
-        const delta = playerState.playerReturning ? -1 : 1;
-        do {
-          pos += delta;
-        } while (this.getMeepleOnPosition(pos) >= 0);
-        return pos;
-      };
-
       // check if we need to turn back now
-      if (!playerState.playerReturning && doStep(playerState.playerMeeplePos) > this.state.treasures.length - 1) {
+      if (!playerState.playerReturning && this.getNextMeeplePos(playerState.playerReturning, playerState.playerMeeplePos) > this.state.treasures.length - 1) {
         playerState.playerReturning = true;
       }
 
@@ -234,19 +240,27 @@ export default class Game extends Component {
 
       let step = 0;
       while (step++ < steps) {
-        let pos = doStep(playerState.playerMeeplePos);
+        const pos = this.getNextMeeplePos(playerState.playerReturning, playerState.playerMeeplePos);
 
         if (!playerState.playerReturning && pos > this.state.treasures.length - 1) {
           break;
         } else if (playerState.playerReturning && pos < 0) {
           playerState.playerMeeplePos = -1;
+
+          if(playerState.playerPickedTreasures.length){
+            // trigger treasure flipping animation, wich coinsist of two parts
+            this.gameService.animationService.promise('animateTreasureFlipPart1')
+              .then(() => {
+                void this.gameService.animationService.promise('animateTreasureFlipPart2');
+              });
+          }
           break;
         }
 
         playerState.playerMeeplePos = pos;
       }
 
-      if(steps === 0){
+      if(steps <= 0){
         // if meeple did not move, resolve the animation right away
         this.gameService.animationService.resolve('animateMeepleMove')();
       }
@@ -257,9 +271,19 @@ export default class Game extends Component {
     // this.gameService.fireLocalStateUpdated();
   };
 
-  getMeepleOnPosition = (idx) => {
-    return this.state.players.findIndex((p) => p.playerMeeplePos === idx);
+  getNextMeeplePos = (playerReturning, meeplePos) => {
+    const getMeepleOnPosition = (idx) => {
+      return this.state.players.findIndex((p) => p.playerMeeplePos === idx);
+    };
+
+    const delta = playerReturning ? -1 : 1;
+    do {
+      meeplePos += delta;
+    } while (getMeepleOnPosition(meeplePos) >= 0);
+
+    return meeplePos;
   };
+
 
   // #TEST ONLY
   onSelectMeeple = async (playerIdx) => {
@@ -289,6 +313,7 @@ export default class Game extends Component {
     this.gameService.updatePlayerState(playerIdx, playerState => {
       playerState.onSelectedTreasure = treasureIdx;
     });
+
     await this.gameService.animationService.promise('animateTreasureMove');
 
     const treasures = [...this.state.treasures];
@@ -298,11 +323,32 @@ export default class Game extends Component {
     this.setState({treasures: treasures});
 
     this.gameService.updatePlayerState(playerIdx, playerState => {
-      playerState.playerPickedTreasures.push(id);
+      if (Array.isArray(id)) {
+        playerState.playerPickedTreasures.push(...id);
+      } else {
+        playerState.playerPickedTreasures.push(id);
+      }
       playerState.onSelectedTreasure = null;
     });
 
-    this.onPlayerTurnsEnd(playerIdx);
+    await this.onPlayerTurnsEnd(playerIdx);
+  };
+
+  onDropAllPickedTreasures = async (playerIdx) => {
+    const playerState = this.gameService.getPlayerState(playerIdx);
+    if (!playerState.playerPickedTreasures.length) {
+      return; // multi-click protection
+    }
+
+    await this.gameService.animationService.promise('animateTreasureDrop');
+
+    const treasures = [...this.state.treasures];
+    treasures.push([...playerState.playerPickedTreasures]);  // do not deconstruct, add as an array (group)
+    this.setState({treasures: treasures});
+
+    this.gameService.updatePlayerState(playerIdx, playerState => {
+      playerState.playerPickedTreasures = [];
+    });
   };
 
   onPlayerTurnsEnd = async (playerIdx) => {
@@ -324,23 +370,23 @@ export default class Game extends Component {
 
       this.gameService.updatePlayerState(playerIdx, (playerState) => {
         playerState.onOldPlayerSavedTreasures = null;
+        playerState.playerPickedTreasures = [];
       });
     }
 
     this.gameService.advancePlayerTurn(false);
 
     this.setState({version: this.state.version + 1}); // this will fireLocalStateUpdated()
+    // console.log('onPlayerTurnsEnd; version=' + this.state.version + '; playerTurn=' + this.state.playerTurn); // #DEBUG
 
     //TODO: detect end of round here, call  onGameRoundEnd()
   };
 
-  onGameRoundEnd = () => {
-    this.gameService.updatePlayersState(players => {
-      // reset players states to start the round
+  onGameRoundEnd = async () => {
+    await this.gameService.updatePlayersState(players => {
+      // reset players states to start new round
       players.forEach((playerState, idx) => {
-        if (this.gameService.isPlayerPlaying(idx)) {
-          playerState.playerStatus = GameService.PlayerStates.WAITING;
-        }
+        playerState.playerStatus = GameService.PlayerStates.WAITING;
       });
     });
   };
@@ -348,14 +394,17 @@ export default class Game extends Component {
   render() {
     return (
       <div className="Game">
-        <Bubbles game={this}/>
-        <Sub game={this}/>
-        <div id="game-field">
-          <Treasures game={this}/>
-          <Meeples game={this}/>
+        <div id="game-content">
+          <Bubbles game={this}/>
+          <Sub game={this}/>
+          <div id="game-field">
+            <Treasures game={this}/>
+            <Meeples game={this}/>
+          </div>
         </div>
         <Players game={this}/>
         <PlayerBoard game={this}/>
+        <Debug game={this}/>
       </div>
     )
   }
