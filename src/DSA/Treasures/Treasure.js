@@ -35,6 +35,7 @@ async function initBlank() {
 }
 
 const Treasure = (props) => {
+  const elemid = props.elemid;  // DOM element id (optional)
   const id = props.id;  // treasure id
   const masked = props.masked;  // if true - show treasure back side, false - show value side
   const rot = props.rot || 0; // rotate treasure image in radians
@@ -81,32 +82,37 @@ const Treasure = (props) => {
     }
   }, [canvasRef, id, masked, rot, col, row, moved]);
 
-  return (
-    <canvas className="Treasure" ref={canvasRef} onClick={props.clicked} width={60} height={60} style={style}/>
-  )
+  if (elemid != null) {
+    return (<canvas id={elemid} className="Treasure" ref={canvasRef} onClick={props.clicked} width={60} height={60}
+                    style={style}/>)
+  } else {
+    return (<canvas className="Treasure" ref={canvasRef} onClick={props.clicked} width={60} height={60}
+                    style={style}/>)
+  }
 };
 
 export const TreasureGroup = (props) => {
+  const elemid = props.elemid;  // DOM element id (optional)
   const id = props.id;  // treasure id
   const masked = props.masked;  // if true - show treasure back side, false - show value side
   const rot = props.rot || 0; // rotate treasure image in radians
   const style = props.style;  // optional style to apply to wrapping DOM element
   const moved = props.moved;  // if not null - animation done callback
 
-  if (Array.isArray(id)) {
-    return (<div className={TreasureGroup}>
-      {
-        id.map((tid, idx) => {
-          const style1 = {...style};
-          // stagger each treasure in a group
-          style1.marginTop = (1 * idx) + "px";
-          style1.marginLeft = (3 * idx) + "px";
-          return <Treasure id={tid} masked={masked} rot={rot} style={style1} moved={moved}/>;
-        })
-      }
-    </div>)
+  const treasures = Array.isArray(id) ? id.map((tid, idx) => {
+    const style1 = {...style};
+    // stagger each treasure in a group
+    style1.marginTop = (1 * idx) + "px";
+    style1.marginLeft = (3 * idx) + "px";
+    return <Treasure id={tid} masked={masked} rot={rot} style={style1} moved={moved}/>;
+  }) : null;
+
+  if (treasures && elemid) {
+    return (<div id={elemid} className={TreasureGroup}>{treasures}</div>)
+  } else if (treasures) {
+    return (<div className={TreasureGroup}>{treasures}</div>)
   } else {
-    return <Treasure id={id} masked={masked} rot={rot} style={style} moved={moved}/>
+    return (<Treasure elemid={elemid} id={id} masked={masked} rot={rot} style={style} moved={moved}/>)
   }
 };
 

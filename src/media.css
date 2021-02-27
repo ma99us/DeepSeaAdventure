@@ -1,106 +1,96 @@
-/*old phones*/
+/*iPad Pro 12 inch landscape*/
 @media only screen
-and (max-device-width: 320px) {
-    body {
-        zoom: 0.3;
-    }
-}
-
-/*iPhone*/
-@media only screen
-and (min-device-width: 321px)
-and (max-device-width: 667px)
+and (max-device-width: 2732px)
+and (max-device-height: 2048px)
 and (orientation: landscape) {
     body {
-        zoom: 0.38;
+        zoom: 2.1;
     }
 }
 
-/*iPhone Plus*/
+/*iPad Pro 12 inch tablet portrait*/
 @media only screen
-and (min-device-width: 668px)
-and (max-device-width: 736px)
-and (orientation: landscape) {
-    body {
-        zoom: 0.45;
-    }
-}
-
-/*iSurface Duo*/
-@media only screen
-and (min-device-width: 720px)
-and (max-device-width: 720px)
-and (max-device-height: 540px)
-and (orientation: landscape) {
-    body {
-        zoom: 0.55;
-    }
-}
-
-/*Nexus 7 landscape*/
-@media only screen
-and (min-device-width: 737px)
-and (max-device-width: 960px)
-and (orientation: landscape) {
-    body {
-        zoom: 0.65;
-    }
-}
-
-/*Nexus 7 portrait*/
-@media only screen
-and (min-device-height: 737px)
-and (max-device-height: 960px)
+and (max-device-width: 2048px)
+and (max-device-height: 2732px)
 and (orientation: portrait) {
     body {
-        zoom: 0.50;
+        zoom: 2.0;
     }
 }
 
-/*iPad landscape*/
+/*iPad Pro 11 inch landscape*/
 @media only screen
-and (min-device-width: 961px)
-and (max-device-width: 1024px)
+and (max-device-width: 2388px)
+and (max-device-height: 1668px)
 and (orientation: landscape) {
     body {
-        zoom: 0.8;
+        zoom: 1.7;
     }
 }
 
-/*iPad portrait*/
+/*iPad Pro 11 inch  portrait*/
 @media only screen
-and (min-device-height: 1024px)
-and (max-device-height: 1024px)
+and (max-device-width: 1668px)
+and (max-device-height: 2388px)
 and (orientation: portrait) {
     body {
-        zoom: 0.8;
+        zoom: 1.50;
     }
 }
 
-/*Nexus 10 landscape*/
+/*iPad Pro 10 inch landscape*/
 @media only screen
-and (min-device-width: 1025px)
-and (max-device-width: 1280px)
+and (max-device-width: 2224px)
+and (max-device-height: 1668px)
 and (orientation: landscape) {
     body {
-        zoom: 0.85;
+        zoom: 1.7;
     }
 }
 
-/*Nexus 10 portrait*/
+/*iPad Pro 10 inch  portrait*/
 @media only screen
-and (min-device-height: 1025px)
-and (max-device-height: 1280px)
+and (max-device-width: 1668px)
+and (max-device-height: 2224px)
 and (orientation: portrait) {
     body {
-        zoom: 0.65;
+        zoom: 1.6;
+    }
+}
+
+/*iPhone 11 pro max landscape*/
+@media only screen
+and (max-device-width: 2688px)
+and (max-device-height: 1242px)
+and (orientation: landscape) {
+    body {
+        zoom: 1.2;
+    }
+}
+
+/*iPhone 11 pro max portrait*/
+@media only screen
+and (max-device-width: 1242px)
+and (max-device-height: 2688px)
+and (orientation: portrait) {
+    body {
+        zoom: 1.2;
+    }
+}
+
+/*HD monitor*/
+@media only screen
+and (max-device-width: 1920px)
+and (max-device-height: 1080px) {
+    body {
+        zoom: 1.0;
     }
 }
 
 /*iPad Pro landscape*/
 @media only screen
-and (min-device-width: 1281px)
 and (max-device-width: 1366px)
+and (max-device-height: 1024px)
 and (orientation: landscape) {
     body {
         zoom: 1.0;
@@ -109,7 +99,7 @@ and (orientation: landscape) {
 
 /*iPad Pro portrait*/
 @media only screen
-and (min-device-height: 1281px)
+and (max-device-width: 1024px)
 and (max-device-height: 1366px)
 and (orientation: portrait) {
     body {
@@ -119,69 +109,128 @@ and (orientation: portrait) {
 
 /*Work monitor*/
 @media only screen
-and (min-device-width: 1400px)
-and (max-device-width: 1999px) {
+and (max-device-width: 1600px)
+and (max-device-height: 900px) {
     body {
         zoom: 0.9;
     }
 }
 
-/*iPad Pro 10 inch landscape*/
+/*Nexus 10 landscape*/
 @media only screen
-and (min-device-width: 2000px)
-and (max-device-width: 2224px)
+and (max-device-width: 1280px)
+and (max-device-height: 800px)
 and (orientation: landscape) {
     body {
-        zoom: 1.7;
+        zoom: 0.85;
     }
 }
 
-/*iPad Pro 10 inch  portrait*/
+/*Nexus 10 portrait*/
 @media only screen
-and (min-device-height: 1367px)
-and (max-device-height: 2224px)
+and (max-device-width: 800px)
+and (max-device-height: 1280px)
 and (orientation: portrait) {
     body {
-        zoom: 1.35;
+        zoom: 0.7;
     }
 }
 
-/*iPad Pro 11 inch landscape*/
+/*iPad landscape*/
 @media only screen
-and (min-device-width: 2225px)
-and (max-device-width: 2501px)
+and (max-device-width: 1024px)
+and (max-device-height: 768px)
 and (orientation: landscape) {
     body {
-        zoom: 1.7;
+        zoom: 0.8;
     }
 }
 
-/*iPad Pro 11 inch  portrait*/
+/*iPad portrait*/
 @media only screen
-and (min-device-height: 2225px)
-and (max-device-height: 2388px)
+and (max-device-width: 768px)
+and (max-device-height: 1024px)
 and (orientation: portrait) {
     body {
-        zoom: 1.40;
+        zoom: 0.7;
     }
 }
 
-/*iPad Pro 12 inch landscape*/
+/*Nexus 7 landscape*/
 @media only screen
-and (min-device-width: 2501px)
-and (max-device-width: 2732px)
+and (max-device-width: 960px)
+and (max-device-height: 600px)
 and (orientation: landscape) {
     body {
-        zoom: 2.1;
+        zoom: 0.6;
     }
 }
 
-/*iPad Pro 12 inch tablet portrait*/
+/*Nexus 7 portrait*/
 @media only screen
-and (min-device-height: 2390px)
-and (max-device-height: 3000px)
+and (max-device-width: 600px)
+and (max-device-height: 960px)
 and (orientation: portrait) {
     body {
-        zoom: 1.65;
+        zoom: 0.55;
+    }
+}
+
+/*iPhoneX landscape*/
+@media only screen
+and (max-device-width: 812px)
+and (max-device-height: 375px)
+and (orientation: landscape) {
+    body {
+        zoom: 0.37;
+    }
+}
+
+/*iPhone Plus landscape*/
+@media only screen
+and (max-device-width: 736px)
+and (max-device-height: 414px)
+and (orientation: landscape) {
+    body {
+        zoom: 0.4;
+    }
+}
+
+/*iPhone Plus portrait*/
+@media only screen
+and (max-device-width: 414px)
+and (max-device-height: 736px)
+and (orientation: portrait) {
+    body {
+        zoom: 0.4;
+    }
+}
+
+/*iPhone landscape*/
+@media only screen
+and (max-device-width: 667px)
+and (max-device-height: 375px)
+and (orientation: landscape) {
+    body {
+        zoom: 0.38;
+    }
+}
+
+/*iPhone portrait*/
+@media only screen
+and (max-device-width: 375px)
+and (max-device-height: 667px)
+and (orientation: portrait) {
+    body {
+        zoom: 0.35;
+    }
+}
+
+/*old phones landscape*/
+@media only screen
+and (max-device-width: 320px)
+and (orientation: landscape) {
+    body {
+        zoom: 0.3;
     }
 }

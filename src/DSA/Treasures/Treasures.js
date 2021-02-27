@@ -69,8 +69,8 @@ const Treasures = (props) => {
       const treasuresElem = document.getElementById("Treasures");
       const playerTreasuresElem = document.getElementById(`player${playerIdx}Treasures`);
       let {dx, dy} = getElementsOffset(treasuresElem, playerTreasuresElem);
-      dx -= 159;  // TODO: this should not be hardcoded
-      dy -= 9;  // TODO: this should not be hardcoded
+      dx -= 161;  // TODO: this should not be hardcoded
+      dy -= 10;  // TODO: this should not be hardcoded
       const style = {transform: `scale(1.0) translate(${dx}px, ${dy}px) rotate(0deg)`};
       style.transition = "all 1.0s";
       return (<TreasureGroup key={index} id={id} masked={true} style={style}

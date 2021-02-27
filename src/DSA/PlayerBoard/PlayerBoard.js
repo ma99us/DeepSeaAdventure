@@ -6,8 +6,8 @@ import thumbs_up from "./thumbs_up_60.png";
 import thumbs_down from "./thumbs_down_60.png";
 import pass_hand from "./pass_hand_60.png";
 import pick_hand from "./pick_hand_60.png";
-import discard_icon from "./discard_60.png";
-import Treasure, {TreasureGroup} from "../Treasures/Treasure";
+import drop_icon from "./discard_60.png";
+import Treasure, {TreasureGroup, TreasureIdsNum} from "../Treasures/Treasure";
 import './PlayerBoard.css';
 
 const PlayerBoard = (props) => {
@@ -68,6 +68,22 @@ const PlayerBoard = (props) => {
   pickStyle.left = "20px";
   pickStyle.filter = makeGlowFilter(3, playerColorStyle, 3);
 
+  const dropTreasureIdx = game.findTreasureIndexToDrop(idx);
+  const dropTreasureId = dropTreasureIdx >= 0 ? playerState.playerPickedTreasures[dropTreasureIdx] : null;
+  const playerDropStyle = {};
+  playerDropStyle.position = "relative";
+  playerDropStyle.visibility = (treasureId == null && dropTreasureId != null) ? "visible" : "hidden";
+  const dropStyle = {};
+  dropStyle.position = "relative";
+  dropStyle.top = "50px";
+  dropStyle.left = "20px";
+  dropStyle.zIndex = "4";
+  dropStyle.filter = makeGlowFilter(3, playerColorStyle, 3);
+  const treasureDropStyle = {};
+  treasureDropStyle.position = "absolute";
+  treasureDropStyle.top = "15px";
+  treasureDropStyle.left = "70px";
+
   style.width = showSecondPart ? "400px" : (showFirstPart ? "200px" : 0);
 
   return (
@@ -89,10 +105,14 @@ const PlayerBoard = (props) => {
       <div id="playerTreasureContainer">
         <div id="playerPass" style={playerPassStyle} onClick={() => game.onPlayerTurnsEnd(idx)}>
           <img src={pass_hand} style={passStyle} alt="pass"/></div>
-        <div id="playerPickTreasure" style={playerPickStyle} onClick={() => game.onPickTreasure(idx, playerState.playerMeeplePos)}>
+        <div id="playerPickTreasure" style={playerPickStyle} onClick={() => game.onPickTreasure(idx)}>
           <TreasureGroup id={treasureId} masked={true} style={treasureStyle}/>
-          <img src={pick_hand} style={pickStyle} alt="pass" width="73" height="50"/></div>
-        <div id="playerDropTreasure">TODO: drop treasures</div>
+          <img src={pick_hand} style={pickStyle} alt="pick" width="73" height="50"/>
+        </div>
+        <div id="playerDropTreasure" style={playerDropStyle} onClick={() => game.onDropTreasure(idx)}>
+          <Treasure id={dropTreasureId} masked={true} style={treasureDropStyle}/>
+          <img src={drop_icon} style={dropStyle} alt="drop" width="30" height="30"/>
+        </div>
       </div>
     </div>
   )

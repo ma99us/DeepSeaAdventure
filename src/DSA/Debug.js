@@ -68,7 +68,7 @@ const DebugDiv = (props) => {
           } else {
             playerState.playerPickedTreasures.push(id);
           }
-          playerState.playerReturning = true;
+          // playerState.playerReturning = true;
           playerState.playerMeeplePos = 0;
         }
         game.setState({treasures: treasures});

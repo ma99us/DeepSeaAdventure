@@ -2,7 +2,7 @@ import React, {Component} from 'react';
 import Prompt, {registerGlobalErrorHandler} from "../common/prompt-component";
 import Bubbles from "./Bubbles/Bubbles";
 import Sub from "./Sub/Sub";
-import {treasureIdToPoints} from "./Treasures/Treasure";
+import {TreasureIdsNum, treasureIdToPoints} from "./Treasures/Treasure";
 import Treasures, {makeTreasureTrackIds} from "./Treasures/Treasures";
 import {MeeplesColors} from "./Meeples/Meeple";
 import Meeples from "./Meeples/Meeples";
@@ -224,19 +224,19 @@ export default class Game extends Component {
 
       console.log('...dice rolled; ' + playerState.playerDiceRolled);  // #DEBUG
       let steps = playerState.playerDiceRolled[0] + 1 + playerState.playerDiceRolled[1] + 1 - playerState.playerPickedTreasures.length;
-      this.moveMeeple(playerIdx, steps)
+      await this.moveMeeple(playerIdx, steps);
     });
   };
 
   moveMeeple = (playerIdx, steps) => {
+    const anim = this.gameService.animationService.promise('animateMeepleMove');
+
     this.gameService.updatePlayerState(playerIdx, (playerState) => {
 
       // check if we need to turn back now
       if (!playerState.playerReturning && this.getNextMeeplePos(playerState.playerReturning, playerState.playerMeeplePos) > this.state.treasures.length - 1) {
         playerState.playerReturning = true;
       }
-
-      void this.gameService.animationService.promise('animateMeepleMove');
 
       let step = 0;
       while (step++ < steps) {
@@ -248,7 +248,7 @@ export default class Game extends Component {
           playerState.playerMeeplePos = -1;
 
           if(playerState.playerPickedTreasures.length){
-            // trigger treasure flipping animation, wich coinsist of two parts
+            // trigger treasure flipping animation, which consists of two parts
             this.gameService.animationService.promise('animateTreasureFlipPart1')
               .then(() => {
                 void this.gameService.animationService.promise('animateTreasureFlipPart2');
@@ -260,15 +260,15 @@ export default class Game extends Component {
         playerState.playerMeeplePos = pos;
       }
 
-      if(steps <= 0){
-        // if meeple did not move, resolve the animation right away
+      if (steps <= 0) {
+        // since meeple do not moe, finish animation right away
         this.gameService.animationService.resolve('animateMeepleMove')();
       }
 
       console.log("meeple #" + playerIdx + " moved by: " + steps + "; playerReturning: " + playerState.playerReturning + ", meeple pos=" + playerState.playerMeeplePos);
     });
 
-    // this.gameService.fireLocalStateUpdated();
+    return anim;
   };
 
   getNextMeeplePos = (playerReturning, meeplePos) => {
@@ -284,6 +284,12 @@ export default class Game extends Component {
     return meeplePos;
   };
 
+  // select a picked treasure with the lowest id
+  findTreasureIndexToDrop = (playerIdx) => {
+    const playerState = this.gameService.getPlayerState(playerIdx);
+    const dropId = playerState.playerPickedTreasures.reduce((sel, tid) => sel < tid ? sel : tid, TreasureIdsNum);
+    return dropId < TreasureIdsNum ? playerState.playerPickedTreasures.findIndex((tid) => tid === dropId) : -1;
+  };
 
   // #TEST ONLY
   onSelectMeeple = async (playerIdx) => {
@@ -304,7 +310,9 @@ export default class Game extends Component {
   //   this.setState({selectedTreasure: selected});
   // };
 
-  onPickTreasure = async (playerIdx, treasureIdx) => {
+  onPickTreasure = async (playerIdx) => {
+    const playerState = this.gameService.getPlayerState(playerIdx);
+    const treasureIdx = playerState.playerMeeplePos;
     if (this.state.treasures[treasureIdx] == null) {
       return; // multi-click protection
     }
@@ -334,13 +342,35 @@ export default class Game extends Component {
     await this.onPlayerTurnsEnd(playerIdx);
   };
 
+  onDropTreasure = async (playerIdx) => {
+    const playerState = this.gameService.getPlayerState(playerIdx);
+    const treasureIdx = playerState.playerMeeplePos;
+    const playerTreasureIdx = this.findTreasureIndexToDrop(playerIdx);
+    const playerTreasureId = playerTreasureIdx >=0 ? playerState.playerPickedTreasures[playerTreasureIdx] : null;
+    if (this.state.treasures[treasureIdx] != null || playerTreasureId == null) {
+      return; // multi-click protection
+    }
+
+    await this.gameService.animationService.promise('animateTreasureDrop');
+
+    const treasures = [...this.state.treasures];
+    treasures[treasureIdx] = playerTreasureId;
+    this.setState({treasures: treasures});
+
+    this.gameService.updatePlayerState(playerIdx, playerState => {
+      playerState.playerPickedTreasures.splice(playerTreasureIdx, 1);
+    });
+
+    await this.onPlayerTurnsEnd(playerIdx);
+  };
+
   onDropAllPickedTreasures = async (playerIdx) => {
     const playerState = this.gameService.getPlayerState(playerIdx);
     if (!playerState.playerPickedTreasures.length) {
       return; // multi-click protection
     }
 
-    await this.gameService.animationService.promise('animateTreasureDrop');
+    await this.gameService.animationService.promise('animateAllTreasuresDrop');
 
     const treasures = [...this.state.treasures];
     treasures.push([...playerState.playerPickedTreasures]);  // do not deconstruct, add as an array (group)

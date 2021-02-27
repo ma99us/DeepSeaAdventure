@@ -1,11 +1,16 @@
 {
-  "short_name": "DSA game",
-  "name": "Deep Sea Adventure game React App",
+  "short_name": "Deep Sea Adventure",
+  "name": "Deep Sea Adventure board game on-line",
   "icons": [
     {
-      "src": "icon_32.png",
+      "src": "favicon.ico",
+      "sizes": "48x48 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "icon_64.png",
       "type": "image/png",
-      "sizes": "32x32"
+      "sizes": "64x64"
     }
   ],
   "start_url": "./",

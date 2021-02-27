@@ -16,12 +16,12 @@ export function makePlayerColorStyle(playerState, opacity = 1) {
 
 const Player = (props) => {
   const game = props.game;  // main game controller
-  const idx = props.idx;  // player index, same as player id
+  const playerIdx = props.idx;  // player index, same as player id
   const style = props.style || {};  // optional style for the wrapper div
 
-  const playerState = game.gameService.getPlayerState(idx);
+  const playerState = game.gameService.getPlayerState(playerIdx);
   const playerColorStyle = makePlayerColorStyle(playerState);
-  const isActivePlayer = game.state.playerTurn === idx;
+  const isActivePlayer = game.state.playerTurn === playerIdx;
   const playerIsDone = playerState.playerReturning && playerState.playerMeeplePos <= -1;
   const oldPlayerScore = playerState.onOldPlayerSavedTreasures != null ? playerState.onOldPlayerSavedTreasures.reduce((score, tid) => score + treasureIdToPoints(tid), 0) : null;
   const playerScore = playerState.playerSavedTreasures.reduce((score, tid) => score + treasureIdToPoints(tid), 0);
@@ -29,9 +29,12 @@ const Player = (props) => {
   const animateScoreGlowIsDone = game.gameService.animationService.isDone('animateScoreGlow');
   const animateTreasureFlipPart1 = game.gameService.animationService.resolve('animateTreasureFlipPart1');
   const animateTreasureFlipPart2 = game.gameService.animationService.resolve('animateTreasureFlipPart2');
+  const animateAllTreasuresDrop = game.gameService.animationService.resolve('animateAllTreasuresDrop');
+  const animateAllTreasuresDropIsDone = game.gameService.animationService.isDone('animateAllTreasuresDrop');
   const animateTreasureDrop = game.gameService.animationService.resolve('animateTreasureDrop');
   const animateTreasureDropIsDone = game.gameService.animationService.isDone('animateTreasureDrop');
-
+  const treasureDropIdx = game.findTreasureIndexToDrop(playerIdx);
+  // const treasureDropId = treasureDropIdx >= 0 ? playerState.playerPickedTreasures[treasureDropIdx] : null;
 
   const highlight = (game.gameService.isGamePlaying && isActivePlayer)
     || (game.gameService.isGameFinished && playerState.playerStatus === GameService.PlayerStates.WON);
@@ -39,7 +42,7 @@ const Player = (props) => {
     style.boxShadow = "0 0 5px 5px " + playerColorStyle;
   }
 
-  if (game.gameService.myPlayerId === idx) {
+  if (game.gameService.myPlayerId === playerIdx) {
     style.backgroundColor = '#56c5caCC';
   } else {
     style.backgroundColor = '#016b8c33';
@@ -50,6 +53,7 @@ const Player = (props) => {
   }
 
   const treasures = playerState.playerPickedTreasures.map((tid, idx) => {
+    const elemId = `player${playerIdx}-treasure${idx}`;
     let moved = null;
     let masked = true;
     const tStyle = {};
@@ -58,6 +62,7 @@ const Player = (props) => {
     tStyle.marginLeft = "-10px";
     tStyle.opacity = 1;
     tStyle.transform = "scaleX(1)";
+    tStyle.zIndex = "4";
     if (playerIsDone && animateTreasureFlipPart1) {
       masked = true;
       tStyle.transition = "all 0.5s";
@@ -76,28 +81,43 @@ const Player = (props) => {
       tStyle.opacity = 0;
       tStyle.transform = "translate(200px, 0px) rotate(180deg) scaleX(1)";
       // console.log('animateScoreGlow=' + animateScoreGlow + ' || animateScoreGlowIsDone=' + animateScoreGlowIsDone);
-    } else if(isActivePlayer && (animateTreasureDrop || animateTreasureDropIsDone)) {
+    } else if(isActivePlayer && (animateAllTreasuresDrop || animateAllTreasuresDropIsDone)) {
       masked = true;
       const {offsetX, offsetY, rotDeg} = getTreasurePos(game.state.treasures.length);
-      const playerTreasuresElem = document.getElementById(`player${idx}Treasures`);
+      const playerTreasuresElem = document.getElementById(elemId);
       const treasuresElem = document.getElementById("Treasures");
       let {dx, dy} = getElementsOffset(playerTreasuresElem, treasuresElem);
       dx += offsetX;
       dy += offsetY;
-      dy += 50; //TODO: this should not be hardcoded
+      dx += 180; //TODO: this should not be hardcoded
+      dy += 45; //TODO: this should not be hardcoded
       tStyle.transition = "all 1.0s";
-      tStyle.opacity = 0;
-      tStyle.transform = `scale(0.8) translate(${dx}px, ${dy}px)`;
+      // tStyle.opacity = 0;
+      tStyle.transform = `scale(0.8) translate(${dx}px, ${dy}px) rotate(${rotDeg}deg`;
+      moved = animateAllTreasuresDrop;
+    } else if(isActivePlayer && treasureDropIdx === idx && (animateTreasureDrop || animateTreasureDropIsDone)) {
+      masked = true;
+      const {offsetX, offsetY, rotDeg} = getTreasurePos(playerState.playerMeeplePos);
+      const playerTreasuresElem = document.getElementById(elemId);
+      const treasuresElem = document.getElementById("Treasures");
+      let {dx, dy} = getElementsOffset(playerTreasuresElem, treasuresElem);
+      dx += offsetX;
+      dy += offsetY;
+      dx += 180; //TODO: this should not be hardcoded
+      dy += 45; //TODO: this should not be hardcoded
+      tStyle.transition = "all 1.0s";
+      // tStyle.opacity = 0;
+      tStyle.transform = `scale(0.8) translate(${dx}px, ${dy}px) rotate(${rotDeg}deg)`;
       moved = animateTreasureDrop;
     } else {
       masked = !playerIsDone;
     }
-    return <Treasure key={idx} id={tid} masked={masked} style={tStyle} moved={moved}/>
+    return <Treasure elemid={elemId} key={idx} id={tid} masked={masked} style={tStyle} moved={moved}/>
   });
 
   return (
-    <div id={`player${idx}Div`}>
-      <div id={`player${idx}Treasures`} className="PlayerTreasures">{treasures}</div>
+    <div id={`player${playerIdx}Div`}>
+      <div id={`player${playerIdx}Treasures`} className="PlayerTreasures">{treasures}</div>
       <div className="Player" style={style} onClick={props.clicked}>
         <ScoreLabel tovalue={playerScore} fromvalue={oldPlayerScore} ondone={animateScoreGlow}/>
         <div className="PlayerName player-text truncate-text"
